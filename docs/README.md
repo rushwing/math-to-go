@@ -51,7 +51,7 @@ Progressive disclosure navigation. Start at the layer that matches your role.
 |-----|---------------|
 | [harness/design-change-protocol.md](../harness/design-change-protocol.md) | **Which docs to check/update for each type of design change** |
 | [harness/requirement-standard.md](../harness/requirement-standard.md) | REQ frontmatter schema, 11-state machine, agent handoff protocol |
-| [harness/review-standard.md](../harness/review-standard.md) | Review checklists per type: req / TC text / TC code / impl / PR |
+| [harness/review-standard.md](../harness/review-standard.md) | Review methodology + checklists per type: req / TC text / TC code / impl / PR |
 | [harness/testing-standard.md](../harness/testing-standard.md) | pytest + Playwright pyramid, TDD mandate, TC file format |
 | [harness/bug-standard.md](../harness/bug-standard.md) | Bug types, lifecycle, blocking/unblocking protocol |
 | [harness/ci-standard.md](../harness/ci-standard.md) | 5 CI gates and how to run them locally |
@@ -59,5 +59,5 @@ Progressive disclosure navigation. Start at the layer that matches your role.
 | [harness/CONNECTORS.md](../harness/CONNECTORS.md) | Task state, handoff protocol, service endpoints, script interfaces |
 | [harness/GLOSSARY.md](../harness/GLOSSARY.md) | Canonical names for all concepts, components, API fields |
 | [harness/kb-ingestion-standard.md](../harness/kb-ingestion-standard.md) | KB contribution: chunking rules, metadata schema, doc_id format |
-| [frontend/design/README.md](../frontend/design/README.md) | Hi-fi component specs, pixel-level design handoff for PHASE-008 |
+| `frontend/design/README.md` | Hi-fi component specs, pixel-level design handoff *(added in PHASE-008)* |
 | [tasks/phases/](../tasks/phases/) | PHASE-000 through PHASE-009 delivery plans |
