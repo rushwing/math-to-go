@@ -272,3 +272,53 @@ SEQ     = 三位序号，从 001 开始
 | `MistakeDrill` | `AnswerSession` + `ProblemSetPreview` | 答题工作区由 `AnswerSession` 承担（UC-2/4 共用），旧名 `MistakeDrill` 废弃。 |
 | `StreamingOutput` | `AgentPipeline` + `CoTStream` + 输出区 | 流式输出已拆分为三层组件，不再有单一 `StreamingOutput` 容器。 |
 | `GradingReport`（简版）| `GradingReport`（含 GradeConfirmPreview + GradingProgress 前置流程）| UC-3 批改为两步流程：先 OCR 确认，再批改，最终报告仍叫 `GradingReport`。 |
+
+---
+
+## 13. 需求流程词汇（Harness Process Terms）
+
+> **机器可读来源：`harness/req-constants.sh`**（`check-req-coverage.sh` 从该文件 source 枚举值）。
+> 下表为人类可读摘要；新增状态或角色时，**先改 `req-constants.sh`，再改本表和 `requirement-standard.md`**，防止三处漂移。
+
+### REQ `status` 枚举值
+
+| 值 | 所有者 | 含义 |
+|----|--------|------|
+| `draft` | human | 需求草稿，尚未进入 agent 工作流 |
+| `req_review` | claude ↔ codex | Claude 设计需求文本，Codex 审核，迭代直到通过 |
+| `tc_design` | codex | Codex 编写测试用例文本（TC 文件）|
+| `tc_review` | claude ↔ codex | Claude 审核 TC 文本，迭代直到通过 |
+| `tc_impl` | claude | Claude 实现测试代码 |
+| `tc_impl_review` | codex | Codex 审核测试代码，通过则进入 `req_impl` |
+| `req_impl` | claude | Claude 实现需求 |
+| `req_impl_review` | codex | Codex 在 Claude 开的 draft PR 上做审查，通过则 `gh pr ready` 进入 `pr_draft` |
+| `pr_draft` | human | Claude 在 T12 已开 draft PR；Codex 审查通过（T13）后转 ready；human 合并 |
+| `done` | — | PR 已合并，所有关联 bug 已关闭 |
+| `blocked` | unassigned | 外部阻塞或升级，等待 human 解除 |
+
+### REQ `owner` 枚举值
+
+| 值 | 含义 |
+|----|------|
+| `claude` | Claude Code 当前负责 |
+| `codex` | Codex 当前负责 |
+| `daniel` | 人工（Daniel）当前负责 |
+| `unassigned` | 未分配（`draft` 和 `blocked` 状态时允许）|
+
+### REQ `tc_policy` 枚举值
+
+| 值 | 含义 |
+|----|------|
+| `required` | 必须有测试用例（默认）|
+| `optional` | 建议但非强制 |
+| `exempt` | 明确豁免，须填写 `tc_exempt_reason` |
+
+### BUG `status` 枚举值
+
+| 值 | 含义 |
+|----|------|
+| `open` | 已发现，待处理 |
+| `in_progress` | 正在修复 |
+| `blocked` | 有外部依赖阻塞 |
+| `resolved` | 代码已修复，待验证 |
+| `closed` | 修复验证通过 |

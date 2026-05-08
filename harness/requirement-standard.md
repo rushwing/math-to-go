@@ -74,6 +74,8 @@ REQ IDs are sequential integers, zero-padded to 3 digits: `REQ-001`, `REQ-042`.
 
 ## §3 Frontmatter Schema
 
+> **Canonical enum values** (status, owner, tc_policy, priority, bug status) are machine-readable in `harness/req-constants.sh` and human-readable in `harness/GLOSSARY.md §13`. The validator (`scripts/check-req-coverage.sh`) sources `req-constants.sh` directly. When adding a new enum value, update `req-constants.sh` first, then this document and GLOSSARY.md §13.
+
 ```yaml
 ---
 req_id: REQ-001
@@ -123,9 +125,9 @@ pr_number: ""                  # GitHub PR number, set at pr_draft
 | `tc_review` | TC Review | claude or codex | Claude reviews TC text ↔ Codex revises; iterate until approved |
 | `tc_impl` | TC Implementation | claude | Claude codes the test cases |
 | `tc_impl_review` | TC Code Review | codex | Codex reviews test code quality and coverage |
-| `req_impl` | Implementation | claude | Claude codes the requirement |
-| `req_impl_review` | Code Review | codex | Codex reviews implementation correctness and style |
-| `pr_draft` | PR | codex → human | Codex opens the PR; human reviews and merges |
+| `req_impl` | Implementation | claude | Claude codes the requirement; opens draft PR on completion |
+| `req_impl_review` | Code Review | codex | Codex reviews the open draft PR; approves or requests changes |
+| `pr_draft` | PR Ready | human | Draft PR converted to ready-for-review; awaiting human merge |
 | `done` | Complete | — | PR merged, all bugs closed |
 | `blocked` | Blocked | unassigned | External dependency or escalation; see §5 |
 
@@ -148,14 +150,17 @@ pr_number: ""                  # GitHub PR number, set at pr_draft
 | T09 | `tc_impl` | claude | Completes TC code; tests runnable | `tc_impl_review` | codex | reset 0 |
 | T10 | `tc_impl_review` | codex | **Approves** TC code | `req_impl` | claude | reset 0 |
 | T11 | `tc_impl_review` | codex | **Requests changes** | `tc_impl` | claude | +1 |
-| T12 | `req_impl` | claude | Completes implementation; tests pass | `req_impl_review` | codex | reset 0 |
-| T13 | `req_impl_review` | codex | **Approves** implementation | `pr_draft` | codex | reset 0 |
-| T14 | `req_impl_review` | codex | **Requests changes** | `req_impl` | claude | +1 |
-| T15 | `pr_draft` | codex | Opens PR (`gh pr create`) | `pr_draft` | human | — |
-| T16 | `pr_draft` | human | Merges PR; sets `status=done` | `done` | — | — |
-| T17 | any | any | External blocker arises | `blocked` | unassigned | — |
-| T18 | `blocked` | human | Blocker resolved | `blocked_from_status` | `blocked_from_owner` | — |
-| T19 | any review state | — | `review_round ≥ 3` | `blocked` | human | — |
+| T12 | `req_impl` | claude | Completes implementation; tests pass; **opens draft PR** (`gh pr create --draft`) | `req_impl_review` | codex | reset 0 |
+| T13 | `req_impl_review` | codex | **Approves** implementation; converts draft PR to ready (`gh pr ready`) | `pr_draft` | human | reset 0 |
+| T14 | `req_impl_review` | codex | **Requests changes** (via PR review comments) | `req_impl` | claude | +1 |
+| T15 | `pr_draft` | human | Merges PR; sets `status=done` | `done` | — | — |
+| T16 | any | any | External blocker arises | `blocked` | unassigned | — |
+| T17 | `blocked` | human | Blocker resolved | `blocked_from_status` | `blocked_from_owner` | — |
+| T18 | any review state | — | `review_round ≥ 3` | `blocked` | human | — |
+
+> **T12 detail:** Claude runs `./scripts/local/test.sh` (all CI gates), then opens a **draft** PR with the standard description template (see `CONNECTORS.md §3`). The draft flag signals the PR is not yet ready for human merge — Codex review must happen first. Opening the draft PR at this point makes the full diff and test evidence visible to Codex in a structured review surface, rather than a flat file diff.
+>
+> **T13 detail:** Codex approves by running `gh pr ready <PR_NUMBER>` (converts draft → ready for review) and updating the REQ frontmatter. This is the signal to Human that the PR is mergeable.
 
 ### State Machine Diagram
 
@@ -185,20 +190,20 @@ pr_number: ""                  # GitHub PR number, set at pr_draft
             ▼
           req_impl
            claude
-            │ T12
+            │ T12: impl done + opens draft PR
             ▼
       req_impl_review
-           codex
-            │ T13 (approved)     T14 (rejected → back to req_impl)
+           codex  (reviews on open draft PR)
+            │ T13 (approved + gh pr ready)   T14 (rejected via PR comments → back to req_impl)
             ▼
           pr_draft
-       codex → human
-            │ T16
+           human  (draft→ready; awaiting merge)
+            │ T15
             ▼
            done
 
-  T17: any state → blocked (external blocker or review_round ≥ 3)
-  T18: blocked → blocked_from_status (human resolves)
+  T16: any state → blocked (external blocker or review_round ≥ 3)
+  T17: blocked → blocked_from_status (human resolves)
 ```
 
 ---

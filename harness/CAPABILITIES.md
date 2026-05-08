@@ -69,7 +69,7 @@ Tool and capability inventory for each agent in the math-to-go development workf
 | `req_review` (owner=claude) | Design the requirement; respond to Codex review comments |
 | `tc_review` (owner=claude) | Review TC text written by Codex; produce BLOCK/SUGGEST findings |
 | `tc_impl` | Implement TC code; ensure all TC-NNN-SS have corresponding tests |
-| `req_impl` | Implement the requirement; all tests pass before handing off |
+| `req_impl` | Implement the requirement; run `./scripts/local/test.sh`; open draft PR (`gh pr create --draft`) with standard description; then hand off to Codex |
 
 ---
 
@@ -90,11 +90,11 @@ Tool and capability inventory for each agent in the math-to-go development workf
 | `req_review` (owner=codex) | Review requirement; output BLOCK/SUGGEST list; update REQ owner |
 | `tc_design` | Write TC markdown files in `tasks/test-cases/`; commit to main |
 | `tc_impl_review` | Review TC code written by Claude; output BLOCK/SUGGEST |
-| `req_impl_review` | Review implementation; output BLOCK/SUGGEST; run `gh pr create` on approval |
-| `pr_draft` | Open PR with description; hand off to human |
+| `req_impl_review` | Review the open draft PR (leave inline comments); output BLOCK/SUGGEST; on approval: run `gh pr ready <PR_NUMBER>`, update REQ `status→pr_draft owner→human` |
 
 ### What Codex does NOT do
 - Does not modify production `backend/app/` code (that is Claude's domain)
+- Does not open PRs (Claude opens the draft PR at T12; Codex only converts draft → ready at T13)
 - Does not merge PRs (human only)
 - Does not approve its own work
 
@@ -123,6 +123,6 @@ Tool and capability inventory for each agent in the math-to-go development workf
 | `tc_review` | Read (TC files), Write (review output) | Read, Write (TC revisions) |
 | `tc_impl` | Read, Edit, Write, Bash(pytest), Bash(git) | — |
 | `tc_impl_review` | — | Read, Bash(pytest), Write (review output) |
-| `req_impl` | Read, Edit, Write, Bash(test.sh), Bash(git) | — |
-| `req_impl_review` | — | Read, Bash(test.sh), Write (review), Bash(gh) |
-| `pr_draft` | — | Bash(gh pr create) |
+| `req_impl` | Read, Edit, Write, Bash(test.sh), Bash(git), **Bash(gh pr create --draft)** | — |
+| `req_impl_review` | — | Read, Bash(test.sh), Write (PR review comments), **Bash(gh pr ready)** |
+| `pr_draft` | — | — |

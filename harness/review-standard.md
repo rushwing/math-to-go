@@ -23,8 +23,8 @@ The review goal is breadth first, then depth: find the full actionable risk surf
 | Requirement review | `req_review` | Codex | Claude | REQ frontmatter + body |
 | TC text review | `tc_review` | Claude | Codex | `tasks/test-cases/TC-NNN-SS.md` |
 | TC code review | `tc_impl_review` | Codex | Claude | test files in `backend/tests/` + `frontend/tests/` |
-| Implementation review | `req_impl_review` | Codex | Claude | production code in `backend/app/` + `frontend/src/` |
-| PR review | `pr_draft` | Human (Daniel) | Codex | GitHub PR diff |
+| Implementation review | `req_impl_review` | Codex | Claude | GitHub draft PR diff (`gh pr review`) |
+| PR review | `pr_draft` | Human (Daniel) | Claude | GitHub PR (converted from draft to ready by Codex at T13) |
 
 ---
 
