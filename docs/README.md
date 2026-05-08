@@ -12,7 +12,7 @@ Progressive disclosure navigation. Start at the layer that matches your role.
 | PM / product owner | [project-scope.md](project-scope.md) | — |
 | Architect / tech lead | [architecture-overview.md](architecture-overview.md) | ADR-001 through ADR-008 |
 | Backend engineer | [ADR-001](adr/ADR-001-llm-framework.md) · [ADR-007](adr/ADR-007-harness-design.md) | Active phase in `tasks/phases/` |
-| Frontend engineer | [Frontend design handoff](../frontend/design/README.md) | PHASE-008 |
+| Frontend engineer | `frontend/design/README.md` *(added in PHASE-008)* | PHASE-008 |
 | KB contributor | [harness/kb-ingestion-standard.md](../harness/kb-ingestion-standard.md) | [harness/GLOSSARY.md](../harness/GLOSSARY.md) |
 | Agent / AI assistant | [CLAUDE.md](../CLAUDE.md) + [ADR-008](adr/ADR-008-development-workflow.md) | Active phase in `tasks/phases/` |
 

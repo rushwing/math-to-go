@@ -14,7 +14,9 @@ Agentic RAG + Knowledge Graph math tutoring system for Chinese elementary studen
 | KB Structure | `knowledge_base/docs/` |
 | Harness Standards | `harness/` |
 
-## Development Commands
+## Development Commands _(planned — available after PHASE-000)_
+
+> These scripts are specified in PHASE-000 but not yet committed. Do not attempt to run them on this branch.
 
 ```bash
 # Start all services (FastAPI + Frontend + Neo4j + ChromaDB)

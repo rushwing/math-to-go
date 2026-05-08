@@ -66,7 +66,7 @@ Every review starts by identifying two things:
    - `scaffold`: creates runnable or navigable starting points, but not full phase exit criteria.
    - `delivery`: claims a REQ/phase acceptance criterion or merge gate is satisfied.
 
-Blocking severity depends on maturity. A missing script is BLOCK for `delivery`; for `proposal` or early `scaffold`, it is BLOCK only if the PR claims the script already runs, routes users to it as the next action, or creates a fail-closed policy depending on it.
+Blocking severity depends on maturity. A missing script is BLOCK for `delivery`; for `proposal` or early `scaffold`, it is BLOCK only if the PR claims the script already runs, creates a fail-closed policy depending on it, or routes users to it as required work. "Routes users" means the missing artifact appears as a required step in `CLAUDE.md` Quick Start / Development Commands, `AGENTS.md` Development Commands, `docs/README.md`, a phase exit criterion, or a CI gate definition. TODO-labelled future work and "will be created" scope lists do not count as routing unless they are also presented as required now.
 
 ### Step 1 - Build the Review Map
 
@@ -98,7 +98,7 @@ Run these passes in order. Do not stop at the first finding unless the PR cannot
 | `bootstrap/scaffold` | Are placeholders clearly labeled? Are "not yet implemented" items distinguishable from working commands? Can a new agent orient without broken links? |
 | `harness` | Does the state machine remain deterministic? Are scripts fail-closed? Are role/owner/status tables consistent across `CLAUDE.md`, ADR-008, and harness docs? |
 | `docs/design` | Does `design-change-protocol.md` require companion updates? Are examples executable or clearly illustrative? Do phase dependencies still make sense? |
-| `backend` | Are async boundaries safe? Are LangGraph state fields owned by one node? Are external calls mocked in tests? Are errors surfaced without leaking internals? |
+| `backend` | Are async boundaries safe? Are LangGraph state fields owned by one node? Are external calls mocked in tests? Are errors surfaced without leaking internals? If any system prompt in `backend/app/` changed, was `eval/prompts-snapshot.md` updated via `scripts/extract-prompts.py --update`? |
 | `frontend` | Are loading/error/empty states covered? Does text fit at mobile widths? Are controls accessible by keyboard and labels? Does API state survive refresh/session boundaries as intended? |
 | `kb/data` | Do doc IDs follow the scheme? Is frontmatter complete? Are Chinese curriculum terms canonical per `GLOSSARY.md`? Is ingestion deterministic? |
 | `release/ops` | Are ports/envs documented? Are Docker images pinned? Can scripts run from repo root? Are local-only paths and generated directories excluded? |

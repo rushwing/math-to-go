@@ -129,8 +129,8 @@ pr_number: ""                  # GitHub PR number, set at pr_draft
 | `done` | Complete | — | PR merged, all bugs closed |
 | `blocked` | Blocked | unassigned | External dependency or escalation; see §5 |
 
-> **Design-review vs implementation-review distinction:**  
-> `req_review` and `tc_review` are _design loops_: on failure the state **stays**, only the owner changes (Codex → Claude or Claude → Codex). The "review" state encompasses both authoring and reviewing.  
+> **Design-review vs implementation-review distinction:**
+> `req_review` and `tc_review` are _design loops_: on failure the state **stays**, only the owner changes (Codex → Claude or Claude → Codex). The "review" state encompasses both authoring and reviewing.
 > `tc_impl_review` and `req_impl_review` are _code review gates_: on failure the state **goes back** to the implementation state (the artifact is not complete).
 
 ### Transition Table

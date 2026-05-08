@@ -95,7 +95,9 @@ The following are NOT yet created — this is what PHASE-000 must produce:
 
 Exit criteria for PHASE-000: `scripts/local/dev.sh` starts all 4 services without error; `scripts/local/test.sh` runs and passes on an empty test suite.
 
-## Development Commands
+## Development Commands _(planned — available after PHASE-000)_
+
+> These scripts are specified in PHASE-000 but not yet committed. Do not attempt to run them on this branch.
 
 ```bash
 # Start all services (FastAPI + Frontend + Neo4j + ChromaDB)
