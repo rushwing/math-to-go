@@ -36,7 +36,7 @@ Full protocol: `harness/requirement-standard.md §0`
 | KB Structure | `knowledge_base/docs/` |
 | Curriculum Tree | `knowledge_base/curriculum/bnu_curriculum.yaml` |
 | Harness Standards | `harness/` |
-| **Frontend Design Handoff** | `frontend/design/README.md` |
+| Frontend Design Handoff | `frontend/design/README.md` *(added in PHASE-008)* |
 
 ## Phase Status
 

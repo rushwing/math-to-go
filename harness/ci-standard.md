@@ -12,6 +12,8 @@ status: active
 
 Defines the five quality gates that must pass before any PR is merged. All gates run locally via `./scripts/local/test.sh` before opening a PR.
 
+> **PHASE-000 scaffold status:** The scripts for G1–G4 (`scripts/release-audit.sh`, `scripts/check-req-coverage.sh`, `scripts/extract-prompts.py`, `scripts/local/test.sh`) are specified but not yet committed. These gates are not mechanically enforceable until PHASE-000 delivers the scripts. Until then, apply the gate intent manually during PR review.
+
 ---
 
 ## §2 Gate Overview
