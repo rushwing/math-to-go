@@ -1,7 +1,7 @@
 ---
 harness_id: BUG-STD-001
 component: bug-management
-owner: daniel
+owner: human-001
 version: "0.1"
 status: active
 ---
@@ -35,7 +35,7 @@ title: "hybrid_retrieve returns unsorted results when ChromaDB returns ties"
 bug_type: impl_bug             # req_bug | tc_bug | impl_bug | ci_bug | user_bug
 status: open                   # open | confirmed | in_progress | fixed | closed | wont_fix
 severity: high                 # critical | high | medium | low
-owner: optimizer-001           # registered UID or unassigned — see harness/agent-registry.yml
+owner: unassigned              # registered UID or unassigned — see harness/agent-registry.yml
 linked_req: REQ-002            # REQ that is blocked by this bug
 regression_tc: []              # [TC-NNN-SS] — TCs that would catch a recurrence
 blocked_reason: ""             # filled if bug itself is blocked
