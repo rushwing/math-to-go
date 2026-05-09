@@ -1,8 +1,27 @@
-# math-to-go — Agent Workspace
+# math-to-go — Agent Workspace (Codex / evaluator-001)
 
 ## Project
 
 Agentic RAG + Knowledge Graph math tutoring system for Chinese elementary students. Currently scoped to Grade 4 Term 2 — Equations Unit.
+
+## Agent Identity
+
+This Codex instance is registered as **`evaluator-001`** in `harness/agent-registry.yml`.
+
+On session start, set your UID:
+```
+AGENT_UID=evaluator-001
+```
+
+## HARD STOP — Before Writing Any Content
+
+Before acting on a requirement:
+
+```bash
+AGENT_UID=evaluator-001 bash scripts/claim-req.sh REQ-NNN
+```
+
+evaluator-001 handles: `req_review | tc_design | tc_impl_review | req_impl_review`
 
 ## Quick Links
 

@@ -4,20 +4,29 @@
 
 Agentic RAG + Knowledge Graph math tutoring system for Chinese elementary students. Currently scoped to Grade 4 Term 2 — Equations Unit.
 
+## Agent Identity
+
+This Claude instance is registered as **`optimizer-001`** in `harness/agent-registry.yml`.
+
+On session start, confirm your UID from `.env`:
+```
+AGENT_UID=optimizer-001
+```
+
 ## HARD STOP — Before Writing Any Code or Content
 
 Before producing any deliverable (code, document, script, task file) for a requirement:
 
 ```bash
-bash scripts/claim-req.sh REQ-NNN claude
+AGENT_UID=optimizer-001 bash scripts/claim-req.sh REQ-NNN
 ```
 
 **If the script exits non-zero: stop. Do not write anything. Report the status to Daniel.**
 
 The script verifies:
 1. The REQ file exists
-2. `owner: claude` in the frontmatter
-3. `status` is one of `req_review | tc_review | tc_impl | req_impl`
+2. `owner: optimizer-001` in the frontmatter
+3. `status` is in optimizer-001's handles: `req_review | tc_review | tc_impl | req_impl`
 
 You may only write deliverables when all three pass. If you receive a task without a REQ ID, ask Daniel for it before starting. The only exception is PHASE-000 (which creates the harness itself — no REQs exist yet).
 

@@ -23,8 +23,8 @@ The review goal is breadth first, then depth: find the full actionable risk surf
 | Requirement review | `req_review` | Codex | Claude | REQ frontmatter + body |
 | TC text review | `tc_review` | Claude | Codex | `tasks/test-cases/TC-NNN-SS.md` |
 | TC code review | `tc_impl_review` | Codex | Claude | test files in `backend/tests/` + `frontend/tests/` |
-| Implementation review | `req_impl_review` | Codex | Claude | production code in `backend/app/` + `frontend/src/` |
-| PR review | `pr_draft` | Human (Daniel) | Codex | GitHub PR diff |
+| Implementation review | `req_impl_review` | Codex | Claude | GitHub draft PR diff (`gh pr review`) |
+| PR review | `pr_draft` | Human (Daniel) | Claude | GitHub PR (converted from draft to ready by Codex at T13) |
 
 ---
 
@@ -240,7 +240,29 @@ Start with §4. Then apply this checklist according to maturity mode.
 
 ---
 
-## §10 Review Comment Format
+## §10 Review Record Placement
+
+| Content | Where |
+|---------|-------|
+| Review findings (BLOCK / SUGGEST / NOTE), inline diff comments, discussion threads | **PR comment** — use GitHub's native review interface; supports diff context and threading |
+| Optimizer's responses to findings | **PR comment** — reply in the same thread or a new comment |
+| REQ file (`tasks/req/REQ-NNN.md`) | Spec changes only (updated ACs, TCs, scope text) + frontmatter state fields (`status`, `owner`, `review_round`) + a **one-row addition** to the Review History table at the bottom |
+
+**Review History table** (append one row per round at the bottom of the REQ file):
+
+```markdown
+# Review History
+| Round | Verdict | 主要变更 |
+|-------|---------|---------|
+| 1 | Changes requested | 新增 AC10/TC-009（显式参数路径）；AC6 补 daniel |
+| 2 | Approved | — |
+```
+
+Rationale: REQ files are specification + state-machine documents. Embedding full review dialogue bloats them and obscures the spec. GitHub PR comments are designed for review conversation and persist in the PR thread for audit.
+
+---
+
+## §11 Review Comment Format
 
 ```
 [BLOCK] <file>:<line> — <problem statement>
