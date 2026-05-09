@@ -41,6 +41,12 @@ else
     exit 1
 fi
 
+# Validate UID format before using it in regex — only allow role-NNN (e.g. optimizer-001).
+if ! [[ "$UID_TO_USE" =~ ^[a-z]+-[0-9]+$ ]]; then
+    echo "ERROR: Invalid UID format '${UID_TO_USE}'. Expected: <role>-<digits> (e.g. optimizer-001)." >&2
+    exit 1
+fi
+
 # ── Registry lookup ────────────────────────────────────────────────────────────
 
 if [[ ! -f "$REGISTRY" ]]; then

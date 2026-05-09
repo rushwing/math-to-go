@@ -106,7 +106,7 @@ Tool and capability inventory for each agent in the math-to-go development workf
 |----------|------|-------------------|
 | Approve requirement scope (T01) | `draft` → `req_review` | ✅ |
 | Merge PR (T16) | `pr_draft` → `done` | ✅ |
-| Resolve escalation (T18/T19) | `blocked` with `review_round ≥ 3` | ✅ |
+| Resolve escalation (T17/T18) | `blocked` triggered by `review_round ≥ 3` (T18); human resolves via T17 | ✅ |
 | `wont_fix` a bug | Any time | ✅ |
 | Add `tc_policy: exempt` with reason | REQ design | ✅ |
 | Override a BLOCK finding | PR review | ✅ (with documented reason) |
