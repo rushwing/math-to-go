@@ -39,7 +39,8 @@ Any other status (`draft`, `blocked`, `done`, `tc_review` with `owner=codex` etc
 ### Mechanical check (run before starting)
 
 ```bash
-bash scripts/claim-req.sh REQ-NNN <your-agent-name>
+AGENT_UID=optimizer-001 bash scripts/claim-req.sh REQ-NNN
+# or: bash scripts/claim-req.sh REQ-NNN optimizer-001  (explicit arg)
 # exits 0 = OK to proceed and claim
 # exits 1 = HARD STOP with reason
 ```
@@ -81,7 +82,7 @@ REQ IDs are sequential integers, zero-padded to 3 digits: `REQ-001`, `REQ-042`.
 req_id: REQ-001
 title: "BGE-M3 hybrid retrieval pipeline"
 status: draft                  # see §4 state machine
-owner: unassigned              # human | claude | codex | unassigned
+owner: unassigned              # optimizer-001 | evaluator-001 | human-001 | unassigned
 priority: P1                   # P0 (critical) | P1 | P2 | P3
 phase: PHASE-002
 scope: backend                 # backend | frontend | harness | docs | scripts | fullstack
@@ -217,7 +218,7 @@ status: blocked
 owner: unassigned
 blocked_reason: "Waiting for Neo4j Docker image fix"
 blocked_from_status: req_impl          # previous status
-blocked_from_owner: claude             # previous owner
+blocked_from_owner: optimizer-001      # previous owner
 pending_bugs: [BUG-007]               # if bug-triggered
 ```
 
@@ -241,7 +242,7 @@ A handoff is complete when the REQ frontmatter is updated AND the receiving agen
 ```bash
 # Single commit, atomic claim
 git add tasks/req/REQ-NNN.md
-git commit -m "claim: REQ-NNN by claude"
+git commit -m "claim: REQ-NNN by optimizer-001"
 ```
 
 **Handing off (agent → agent):**
@@ -253,9 +254,9 @@ git commit -m "claim: REQ-NNN by claude"
 **Review rejection (agent → same state, new owner):**
 
 ```yaml
-status: req_review       # unchanged
-owner: claude            # changed back to author
-review_round: 1          # incremented
+status: req_review          # unchanged
+owner: optimizer-001        # changed back to author
+review_round: 1             # incremented
 ```
 
 Commit message: `review-reject: REQ-NNN round 1 — <summary of changes requested>`

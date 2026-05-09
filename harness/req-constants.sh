@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Canonical enum values for the requirement state machine (ADR-008 / requirement-standard.md §3-4).
 # SOURCE OF TRUTH: check-req-coverage.sh sources this file.
-# Keep in sync with requirement-standard.md §3 (frontmatter schema) and §4 (state machine).
+# Keep in sync with requirement-standard.md §3 (frontmatter schema) and GLOSSARY.md §13.
+#
+# owner values are derived dynamically from harness/agent-registry.yml so that
+# adding a new agent UID only requires updating the registry, not this file.
+# Override registry path via: AGENT_REGISTRY=<path> (used by test fixtures).
 
 # REQ status values — see requirement-standard.md §4 State Machine
 REQ_VALID_STATUSES=(
@@ -18,13 +22,19 @@ REQ_VALID_STATUSES=(
   blocked
 )
 
-# REQ owner values
-REQ_VALID_OWNERS=(
-  claude
-  codex
-  daniel
-  unassigned
-)
+# REQ owner values — derived from agent registry + unassigned
+_REGISTRY_FILE="${AGENT_REGISTRY:-harness/agent-registry.yml}"
+REQ_VALID_OWNERS=()
+if [[ -f "$_REGISTRY_FILE" ]]; then
+    while IFS= read -r _uid; do
+        [[ -n "$_uid" ]] && REQ_VALID_OWNERS+=("$_uid")
+    done < <(awk '/- uid:/ { print $NF }' "$_REGISTRY_FILE")
+    REQ_VALID_OWNERS+=("unassigned")
+else
+    # Fallback: registry missing — only unassigned is valid (fail-safe, not fail-open)
+    REQ_VALID_OWNERS=("unassigned")
+fi
+unset _REGISTRY_FILE _uid
 
 # REQ tc_policy values
 REQ_VALID_TC_POLICIES=(

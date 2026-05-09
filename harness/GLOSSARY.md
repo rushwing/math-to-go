@@ -298,12 +298,14 @@ SEQ     = 三位序号，从 001 开始
 
 ### REQ `owner` 枚举值
 
-| 值 | 含义 |
-|----|------|
-| `claude` | Claude Code 当前负责 |
-| `codex` | Codex 当前负责 |
-| `daniel` | 人工（Daniel）当前负责 |
-| `unassigned` | 未分配（`draft` 和 `blocked` 状态时允许）|
+> **机器可读来源：`harness/agent-registry.yml`**。`harness/req-constants.sh` 在运行时从注册表动态派生有效 UID 列表；下表为人类可读摘要。新增 agent 时只需更新注册表文件，无需修改脚本或本表。
+
+| 值 | 角色 | 含义 |
+|----|------|------|
+| `optimizer-001` | optimizer | Claude Code 当前负责（需求设计、实现）|
+| `evaluator-001` | evaluator | Codex 当前负责（需求审核、TC 设计、代码审查）|
+| `human-001` | human | 人工（Daniel）当前负责（范围审批、合并）|
+| `unassigned` | — | 未分配（`draft` 和 `blocked` 状态时允许）|
 
 ### REQ `tc_policy` 枚举值
 
