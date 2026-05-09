@@ -35,7 +35,7 @@ title: "hybrid_retrieve returns unsorted results when ChromaDB returns ties"
 bug_type: impl_bug             # req_bug | tc_bug | impl_bug | ci_bug | user_bug
 status: open                   # open | confirmed | in_progress | fixed | closed | wont_fix
 severity: high                 # critical | high | medium | low
-owner: claude                  # claude | codex | daniel | unassigned
+owner: optimizer-001           # registered UID or unassigned — see harness/agent-registry.yml
 linked_req: REQ-002            # REQ that is blocked by this bug
 regression_tc: []              # [TC-NNN-SS] — TCs that would catch a recurrence
 blocked_reason: ""             # filled if bug itself is blocked
@@ -48,23 +48,23 @@ blocked_reason: ""             # filled if bug itself is blocked
 
 | State | Meaning | Owner |
 |-------|---------|-------|
-| `open` | Filed; not yet confirmed | unassigned |
-| `confirmed` | Root cause identified | claude or codex |
-| `in_progress` | Being fixed | claude |
-| `fixed` | Fix committed; awaiting review | codex |
+| `open` | Filed; not yet confirmed | `unassigned` |
+| `confirmed` | Root cause identified | `optimizer-001` or `evaluator-001` |
+| `in_progress` | Being fixed | `optimizer-001` |
+| `fixed` | Fix committed; awaiting review | `evaluator-001` |
 | `closed` | Fix reviewed and merged | — |
-| `wont_fix` | Intentional non-fix with documented reason | daniel |
+| `wont_fix` | Intentional non-fix with documented reason | `human-001` |
 
 ### Transition Table
 
 | From | Event | To | Owner after |
 |------|-------|-----|-------------|
-| `open` | Agent or human identifies root cause | `confirmed` | claude |
-| `confirmed` | Claude begins fix | `in_progress` | claude |
-| `in_progress` | Fix committed | `fixed` | codex |
-| `fixed` | Codex approves fix | `closed` | — |
-| `fixed` | Codex rejects fix | `in_progress` | claude |
-| `open` / `confirmed` | Daniel decides not to fix | `wont_fix` | daniel |
+| `open` | Agent or human identifies root cause | `confirmed` | `optimizer-001` |
+| `confirmed` | Optimizer begins fix | `in_progress` | `optimizer-001` |
+| `in_progress` | Fix committed | `fixed` | `evaluator-001` |
+| `fixed` | Evaluator approves fix | `closed` | — |
+| `fixed` | Evaluator rejects fix | `in_progress` | `optimizer-001` |
+| `open` / `confirmed` | Human decides not to fix | `wont_fix` | `human-001` |
 
 ---
 
@@ -79,7 +79,7 @@ status: blocked
 owner: unassigned
 blocked_reason: "BUG-007: hybrid_retrieve returns unsorted results"
 blocked_from_status: req_impl_review      # the state we were in
-blocked_from_owner: codex                  # who was working on it
+blocked_from_owner: evaluator-001          # who was working on it
 pending_bugs: [BUG-007]
 ```
 
