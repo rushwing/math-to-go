@@ -63,13 +63,13 @@ Tool and capability inventory for each agent in the math-to-go development workf
 | `update-config` | Claude Code settings changes |
 | `fewer-permission-prompts` | Reduce Bash permission prompts |
 
-### Workflow stages where Claude is owner
+### Workflow stages where Claude (optimizer-001) is owner
 | REQ state | Claude's action |
 |-----------|----------------|
-| `req_review` (owner=claude) | Design the requirement; respond to Codex review comments |
-| `tc_review` (owner=claude) | Review TC text written by Codex; produce BLOCK/SUGGEST findings |
-| `tc_impl` | Implement TC code; ensure all TC-NNN-SS have corresponding tests |
-| `req_impl` | Implement the requirement; run `./scripts/local/test.sh`; open draft PR (`gh pr create --draft`) with standard description; then hand off to Codex |
+| `req_review` (owner=optimizer-001) | Design the requirement; respond to Evaluator review comments |
+| `tc_review` (owner=optimizer-001) | Review TC text written by Evaluator; produce BLOCK/SUGGEST findings |
+| `tc_impl` (owner=optimizer-001) | Implement TC code; ensure all TC-NNN-SS have corresponding tests |
+| `req_impl` (owner=optimizer-001) | Implement the requirement; run `./scripts/local/test.sh`; open draft PR (`gh pr create --draft`) with standard description; then hand off to Evaluator |
 
 ---
 
@@ -84,13 +84,13 @@ Tool and capability inventory for each agent in the math-to-go development workf
 | Git operations | git CLI | commit, branch, PR |
 | GitHub CLI | gh CLI | `gh pr create`, `gh pr review` |
 
-### Workflow stages where Codex is owner
+### Workflow stages where Codex (evaluator-001) is owner
 | REQ state | Codex's action |
 |-----------|---------------|
-| `req_review` (owner=codex) | Review requirement; output BLOCK/SUGGEST list; update REQ owner |
-| `tc_design` | Write TC markdown files in `tasks/test-cases/`; commit to main |
-| `tc_impl_review` | Review TC code written by Claude; output BLOCK/SUGGEST |
-| `req_impl_review` | Review the open draft PR (leave inline comments); output BLOCK/SUGGEST; on approval: run `gh pr ready <PR_NUMBER>`, update REQ `status→pr_draft owner→human` |
+| `req_review` (owner=evaluator-001) | Review requirement; output BLOCK/SUGGEST list; update REQ owner |
+| `tc_design` (owner=evaluator-001) | Write TC markdown files in `tasks/test-cases/`; commit to main |
+| `tc_impl_review` (owner=evaluator-001) | Review TC code written by Claude; output BLOCK/SUGGEST |
+| `req_impl_review` (owner=evaluator-001) | Review the open draft PR (leave inline comments); output BLOCK/SUGGEST; on approval: run `gh pr ready <PR_NUMBER>`, update REQ `status→pr_draft owner→human-001` |
 
 ### What Codex does NOT do
 - Does not modify production `backend/app/` code (that is Claude's domain)

@@ -11,8 +11,8 @@ Task state is the single source of truth: the `status` and `owner` fields in REQ
 | Operation | How | Example |
 |-----------|-----|---------|
 | Read current state | `cat tasks/req/REQ-NNN.md` | — |
-| Claim task | Edit frontmatter, `git commit -m "claim: REQ-NNN by claude"` | — |
-| Advance state | Edit frontmatter, `git commit -m "handoff: REQ-NNN → codex (T03)"` | T03: req approved |
+| Claim task | Edit frontmatter, `git commit -m "claim: REQ-NNN by optimizer-001"` | — |
+| Advance state | Edit frontmatter, `git commit -m "handoff: REQ-NNN → evaluator-001 (T03)"` | T03: req approved |
 | Reject in review | Edit `owner` + `review_round`, `git commit -m "review-reject: REQ-NNN round N"` | T04, T08, T11, T14 |
 | Block task | Set `status=blocked`, `blocked_from_*`, append to `pending_bugs` | T17 |
 | Unblock task | Restore `status` + `owner` from `blocked_from_*` | T18 |

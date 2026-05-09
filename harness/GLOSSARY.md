@@ -282,19 +282,19 @@ SEQ     = 三位序号，从 001 开始
 
 ### REQ `status` 枚举值
 
-| 值 | 所有者 | 含义 |
-|----|--------|------|
-| `draft` | human | 需求草稿，尚未进入 agent 工作流 |
-| `req_review` | claude ↔ codex | Claude 设计需求文本，Codex 审核，迭代直到通过 |
-| `tc_design` | codex | Codex 编写测试用例文本（TC 文件）|
-| `tc_review` | claude ↔ codex | Claude 审核 TC 文本，迭代直到通过 |
-| `tc_impl` | claude | Claude 实现测试代码 |
-| `tc_impl_review` | codex | Codex 审核测试代码，通过则进入 `req_impl` |
-| `req_impl` | claude | Claude 实现需求 |
-| `req_impl_review` | codex | Codex 在 Claude 开的 draft PR 上做审查，通过则 `gh pr ready` 进入 `pr_draft` |
-| `pr_draft` | human | Claude 在 T12 已开 draft PR；Codex 审查通过（T13）后转 ready；human 合并 |
+| 值 | Owner（frontmatter） | 含义 |
+|----|----------------------|------|
+| `draft` | `human-001` | 需求草稿，尚未进入 agent 工作流 |
+| `req_review` | `optimizer-001` ↔ `evaluator-001` | Optimizer 设计需求文本，Evaluator 审核，迭代直到通过 |
+| `tc_design` | `evaluator-001` | Evaluator 编写测试用例文本（TC 文件）|
+| `tc_review` | `optimizer-001` ↔ `evaluator-001` | Optimizer 审核 TC 文本，迭代直到通过 |
+| `tc_impl` | `optimizer-001` | Optimizer 实现测试代码 |
+| `tc_impl_review` | `evaluator-001` | Evaluator 审核测试代码，通过则进入 `req_impl` |
+| `req_impl` | `optimizer-001` | Optimizer 实现需求 |
+| `req_impl_review` | `evaluator-001` | Evaluator 在 Optimizer 开的 draft PR 上做审查，通过则 `gh pr ready` 进入 `pr_draft` |
+| `pr_draft` | `human-001` | Optimizer 在 T12 已开 draft PR；Evaluator 审查通过（T13）后转 ready；Human 合并 |
 | `done` | — | PR 已合并，所有关联 bug 已关闭 |
-| `blocked` | unassigned | 外部阻塞或升级，等待 human 解除 |
+| `blocked` | `unassigned` | 外部阻塞或升级，等待 Human 解除 |
 
 ### REQ `owner` 枚举值
 
