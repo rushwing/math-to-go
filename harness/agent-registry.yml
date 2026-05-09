@@ -16,6 +16,12 @@ agents:
     description: "Primary evaluator — requirement review, TC design, TC code review, implementation review"
     handles: [req_review, tc_design, tc_impl_review, req_impl_review]
 
+  - uid: evaluator-002
+    role: evaluator
+    model: deepseek-chat
+    description: "Backup evaluator (DeepSeek) — same handles as evaluator-001; used when primary evaluator is unavailable"
+    handles: [req_review, tc_design, tc_impl_review, req_impl_review]
+
   - uid: human-001
     role: human
     model: human
