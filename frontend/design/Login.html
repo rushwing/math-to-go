@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>数学助手 · 登录</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: "Noto Sans SC","PingFang SC",sans-serif;
+    background: #FFF9F0; color: #1A1A1A; font-size: 16px; -webkit-font-smoothing: antialiased; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .fade-in { animation: fadeIn .3s ease both; }
+  input:focus { outline: none; border-color: #1865F2 !important; box-shadow: 0 0 0 3px rgba(24,101,242,0.12); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+
+const MOCK_USERS = [
+  { id:"s001", name:"李小明", role:"student", grade:"G4", class:"四年级二班", password:"123456", avatar:"👦" },
+  { id:"s002", name:"王小红", role:"student", grade:"G4", class:"四年级二班", password:"123456", avatar:"👧" },
+  { id:"a001", name:"张老师", role:"admin",   title:"数学教研组长",           password:"admin123", avatar:"👩‍🏫" },
+];
+
+function LoginScreen() {
+  const [role, setRole]         = React.useState(null); // "student" | "admin"
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError]       = React.useState("");
+  const [loading, setLoading]   = React.useState(false);
+
+  function handleLogin(e) {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    setTimeout(() => {
+      const user = MOCK_USERS.find(u =>
+        u.role === role && (u.name === username || u.id === username) && u.password === password
+      );
+      if (user) {
+        localStorage.setItem("mtt_user", JSON.stringify(user));
+        if (user.role === "admin") {
+          window.location.href = "Admin Panel.html";
+        } else {
+          window.location.href = "Math Tutor.html";
+        }
+      } else {
+        setError("用户名或密码错误，请重试");
+        setLoading(false);
+      }
+    }, 800);
+  }
+
+  return (
+    <div style={ls.shell}>
+      {/* Left panel */}
+      <div style={ls.left}>
+        <div style={ls.brand}>
+          <div style={ls.logoMark}>数</div>
+          <div>
+            <div style={ls.logoName}>数学助手</div>
+            <div style={ls.logoSub}>math-to-go · 四年级数学 AI 辅导</div>
+          </div>
+        </div>
+        <div style={ls.taglines}>
+          {["📚 三色笔记，轻松复习","📝 智能出题，按需练习","📷 拍照批改，即时反馈","💪 艾宾浩斯，科学夯实"].map(t => (
+            <div key={t} style={ls.tagline}>{t}</div>
+          ))}
+        </div>
+        <div style={ls.leftFooter}>北师大版 · 四年级下册 · 方程单元</div>
+      </div>
+
+      {/* Right panel */}
+      <div style={ls.right}>
+        <div style={ls.card} className="fade-in">
+          <h2 style={ls.title}>欢迎登录</h2>
+
+          {/* Role selector */}
+          {!role && (
+            <div style={{ display:"flex", flexDirection:"column", gap:12, marginTop:8 }}>
+              <p style={ls.hint}>请选择你的身份</p>
+              {[
+                { id:"student", icon:"🧒", label:"我是学生", sub:"进入学习界面，记录学习成长" },
+                { id:"admin",   icon:"👩‍🏫", label:"我是老师 / 管理员", sub:"管理知识库，查看学生数据" },
+              ].map(r => (
+                <button key={r.id} style={ls.roleCard} onClick={() => setRole(r.id)}>
+                  <span style={{ fontSize:28 }}>{r.icon}</span>
+                  <div style={{ textAlign:"left" }}>
+                    <div style={{ fontWeight:700, fontSize:16 }}>{r.label}</div>
+                    <div style={{ fontSize:13, color:"#7A7167", marginTop:2 }}>{r.sub}</div>
+                  </div>
+                  <span style={{ marginLeft:"auto", color:"#C0B8AD" }}>›</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Login form */}
+          {role && (
+            <form onSubmit={handleLogin} style={{ display:"flex", flexDirection:"column", gap:16, marginTop:8 }}>
+              <button type="button" style={ls.backBtn} onClick={() => { setRole(null); setError(""); }}>
+                ← 返回选择身份
+              </button>
+              <div style={ls.roleTag}>
+                {role === "student" ? "🧒 学生登录" : "👩‍🏫 管理员登录"}
+              </div>
+
+              <div style={ls.field}>
+                <label style={ls.label}>用户名</label>
+                <input
+                  style={ls.input}
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder={role === "student" ? "例：李小明 或 s001" : "例：张老师 或 a001"}
+                  autoFocus
+                />
+              </div>
+              <div style={ls.field}>
+                <label style={ls.label}>密码</label>
+                <input
+                  style={ls.input}
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={role === "student" ? "学生默认密码：123456" : "管理员密码：admin123"}
+                />
+              </div>
+
+              {error && (
+                <div style={ls.error}>{error}</div>
+              )}
+
+              <button type="submit" style={{ ...ls.loginBtn, opacity: loading ? 0.7 : 1 }} disabled={loading}>
+                {loading ? "登录中…" : "登录"}
+              </button>
+
+              {/* Quick fill hint */}
+              <div style={ls.quickFill}>
+                <span style={ls.quickFillLabel}>快速填入：</span>
+                {role === "student"
+                  ? MOCK_USERS.filter(u => u.role === "student").map(u => (
+                    <button key={u.id} type="button" style={ls.quickBtn}
+                      onClick={() => { setUsername(u.name); setPassword(u.password); }}>
+                      {u.avatar} {u.name}
+                    </button>
+                  ))
+                  : MOCK_USERS.filter(u => u.role === "admin").map(u => (
+                    <button key={u.id} type="button" style={ls.quickBtn}
+                      onClick={() => { setUsername(u.name); setPassword(u.password); }}>
+                      {u.avatar} {u.name}
+                    </button>
+                  ))
+                }
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ls = {
+  shell: {
+    display:"flex", minHeight:"100vh",
+  },
+  left: {
+    width:380, background:"#1865F2", color:"#fff",
+    display:"flex", flexDirection:"column", justifyContent:"space-between",
+    padding:"48px 40px", flexShrink:0,
+  },
+  brand: { display:"flex", alignItems:"center", gap:16 },
+  logoMark: {
+    width:48, height:48, borderRadius:12,
+    background:"rgba(255,255,255,0.2)",
+    display:"flex", alignItems:"center", justifyContent:"center",
+    fontSize:24, fontWeight:800,
+  },
+  logoName: { fontSize:22, fontWeight:800 },
+  logoSub:  { fontSize:13, opacity:.7, marginTop:2 },
+  taglines: { display:"flex", flexDirection:"column", gap:16 },
+  tagline:  { fontSize:16, fontWeight:500, opacity:.9, lineHeight:1.5 },
+  leftFooter: { fontSize:13, opacity:.5 },
+  right: {
+    flex:1, display:"flex", alignItems:"center", justifyContent:"center",
+    padding:32, background:"#FFF9F0",
+  },
+  card: {
+    background:"#fff", borderRadius:16, border:"1.5px solid #EDE8DF",
+    padding:"36px 40px", width:"100%", maxWidth:420,
+    boxShadow:"0 4px 24px rgba(0,0,0,0.06)",
+  },
+  title: { fontSize:22, fontWeight:800, color:"#1A1A1A", marginBottom:20 },
+  hint:  { fontSize:15, color:"#7A7167" },
+  roleCard: {
+    display:"flex", alignItems:"center", gap:14,
+    padding:"16px 18px", borderRadius:12,
+    border:"1.5px solid #EDE8DF", background:"#FFF9F0",
+    cursor:"pointer", fontFamily:"inherit", textAlign:"left",
+    transition:"all .15s", width:"100%",
+  },
+  backBtn: {
+    background:"none", border:"none", cursor:"pointer",
+    fontSize:13, color:"#1865F2", fontFamily:"inherit",
+    textAlign:"left", padding:0, fontWeight:600,
+  },
+  roleTag: {
+    fontSize:14, fontWeight:700, color:"#1865F2",
+    background:"#EEF3FF", borderRadius:8, padding:"6px 14px",
+    display:"inline-block",
+  },
+  field: { display:"flex", flexDirection:"column", gap:6 },
+  label: { fontSize:14, fontWeight:600, color:"#5A5248" },
+  input: {
+    height:46, borderRadius:10, border:"1.5px solid #DDD8CE",
+    padding:"0 14px", fontSize:16, fontFamily:"inherit",
+    background:"#fff", transition:"border-color .15s",
+    color:"#1A1A1A",
+  },
+  error: {
+    fontSize:14, color:"#DC2626", background:"#FFF5F5",
+    borderRadius:8, padding:"10px 14px",
+  },
+  loginBtn: {
+    height:48, borderRadius:12, border:"none",
+    background:"#1865F2", color:"#fff",
+    fontSize:16, fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+    transition:"opacity .15s",
+  },
+  quickFill: {
+    display:"flex", alignItems:"center", gap:8, flexWrap:"wrap",
+    paddingTop:4, borderTop:"1px solid #EDE8DF",
+  },
+  quickFillLabel: { fontSize:12, color:"#9E9589" },
+  quickBtn: {
+    padding:"4px 10px", borderRadius:6, border:"1.5px solid #DDD8CE",
+    background:"#F5F3EF", fontSize:13, cursor:"pointer", fontFamily:"inherit",
+    color:"#1A1A1A",
+  },
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<LoginScreen />);
+</script>
+</body>
+</html>

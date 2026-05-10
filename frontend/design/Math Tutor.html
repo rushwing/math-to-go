@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>数学助手 v2 · math-to-go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFF9F0;
+    --blue: #1865F2;
+    --blue-light: #EEF3FF;
+    --surface: #FFFFFF;
+    --border: #EDE8DF;
+    --text: #1A1A1A;
+    --text-secondary: #7A7167;
+    --text-muted: #9E9589;
+  }
+
+  html, body { height: 100%; font-family: "Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+    background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; }
+  #root { height: 100%; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #DDD8CE; border-radius: 3px; }
+
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+  @keyframes shimmer { 0%{background:#EDE8DF} 50%{background:#F5F3EF} 100%{background:#EDE8DF} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes ripple { 0%{transform:scale(.8);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+  @keyframes thinkDot { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.1);opacity:1} }
+
+  .fade-in { animation: fadeIn .25s ease both; }
+
+  @media print {
+    body { background: #fff !important; }
+    #top-nav, #sidebar, .no-print { display: none !important; }
+    #main-content { padding: 0 !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+
+  #app-shell { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+  #top-nav { flex-shrink:0; z-index:100; position:relative; }
+  #body { display:flex; flex:1; overflow:hidden; }
+
+  #sidebar {
+    width: 280px; flex-shrink:0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 20px 16px 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  #main-content { flex:1; overflow-y:auto; padding:24px 32px; display:flex; flex-direction:column; gap:20px; }
+
+  .section-title { font-size:12px; font-weight:700; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+
+  .output-placeholder { display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:16px; min-height:320px; }
+  .output-placeholder-icon { font-size:48px; opacity:.35; }
+  .output-placeholder-text { font-size:16px; color:var(--text-muted); text-align:center;
+    max-width:280px; line-height:1.6; }
+
+  .progress-bar-wrap { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:var(--blue); border-radius:2px; transition:width .4s ease; }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    #sidebar { display:none; }
+    #mobile-bottom { display:flex !important; }
+    #main-content { padding:16px 12px 80px; }
+  }
+  #mobile-bottom { display:none; position:fixed; bottom:0; left:0; right:0;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:8px 12px; gap:6px; z-index:200; }
+  .mobile-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:8px 4px; border-radius:8px; border:none; background:none; cursor:pointer;
+    font-family:inherit; font-size:11px; color:var(--text-muted); min-height:52px; }
+  .mobile-tab.active { background:var(--blue-light); color:var(--blue); }
+  .mobile-tab-icon { font-size:20px; }
+
+  textarea:focus { border-color: var(--blue) !important; outline: none; }
+
+  /* Account menu hover */
+  .ua-menu-item:hover { background: #F5F3EF !important; }
+
+  /* ThreeColorNotes print */
+  .three-color-notes code { font-family: 'Courier New', monospace; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="curriculum-data.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="components-v2.jsx"></script>
+
+<script type="text/babel">
+// ─── Mock data ────────────────────────────────────────────────────────────────
+const MOCK_PROBLEMS = [
+  { id:1, question:"解方程：x + 23 = 47", solution:"x + 23 = 47\nx = 47 - 23\nx = 24", answer:"24", difficulty:"easy", subtopic:"解方程" },
+  { id:2, question:"解方程：3x - 6 = 18", solution:"3x - 6 = 18\n3x = 18 + 6\n3x = 24\nx = 24 ÷ 3\nx = 8", answer:"8", difficulty:"easy", subtopic:"解方程" },
+  { id:3, question:"解方程：2(x + 5) = 26", solution:"2(x + 5) = 26\n2x + 10 = 26\n2x = 16\nx = 8", answer:"8", difficulty:"medium", subtopic:"去括号" },
+  { id:4, question:"解方程：4x + 7 = 3x + 15", solution:"4x + 7 = 3x + 15\n4x - 3x = 15 - 7\nx = 8", answer:"8", difficulty:"medium", subtopic:"等式性质" },
+  { id:5, question:"小红有若干本书，借给同学8本后还剩14本，小红原来有多少本书？列方程解答。", solution:"设小红原来有 x 本书\nx - 8 = 14\nx = 14 + 8\nx = 22", answer:"22（本）", difficulty:"medium", subtopic:"应用题" },
+  { id:6, question:"解方程：3(2x - 4) + 5 = 23", solution:"3(2x - 4) + 5 = 23\n6x - 12 + 5 = 23\n6x - 7 = 23\n6x = 30\nx = 5", answer:"5", difficulty:"hard", subtopic:"去括号" },
+];
+
+const MOCK_DRILL_PROBLEMS = [
+  { id:1, question:"解方程：5(x - 3) = 20\n\n【上次错误提示】：去括号时忘记把系数5乘进括号内每项", solution:"5(x - 3) = 20\n5x - 15 = 20\n5x = 35\nx = 7", answer:"7", difficulty:"medium", subtopic:"去括号", docId:"MISTAKE.G4T2.EQ.003", interval:4 },
+  { id:2, question:"解方程：x ÷ 4 + 6 = 14\n\n【上次错误提示】：移项时符号搞反", solution:"x ÷ 4 + 6 = 14\nx ÷ 4 = 14 - 6\nx ÷ 4 = 8\nx = 32", answer:"32", difficulty:"medium", subtopic:"等式性质", docId:"MISTAKE.G4T2.EQ.007", interval:2 },
+  { id:3, question:"一箱苹果分给3个小朋友，每人分到12个，还剩6个，箱子里原来有几个苹果？请列方程解答。", solution:"设苹果共 x 个\nx ÷ 3 = 12 余 6\nx = 3 × 12 + 6\nx = 42", answer:"42（个）", difficulty:"hard", subtopic:"应用题", docId:"MISTAKE.G4T2.EQ.011", interval:1 },
+];
+
+const MOCK_OCR = [
+  { id:1, question:"解方程：x + 23 = 47", studentAnswer:"x = 24", confidence:0.95 },
+  { id:2, question:"解方程：3x - 6 = 18", studentAnswer:"x = 7", confidence:0.91 },
+  { id:3, question:"解方程：2(x + 5) = 26", studentAnswer:"x = 8", confidence:0.88 },
+  { id:4, question:"用方程解：小明有x本书，借出5本后还剩18本", studentAnswer:"x = 22", confidence:0.62 },
+];
+
+const MOCK_GRADE_RESULTS = [
+  { id:1, question:"解方程：x + 23 = 47", studentAnswer:"x = 24", correct:true,  correctAnswer:"x = 24", explanation:"", source:"kb_match" },
+  { id:2, question:"解方程：3x - 6 = 18",  studentAnswer:"x = 7",  correct:false, correctAnswer:"x = 8",  explanation:"3x = 24，x = 24 ÷ 3 = 8。你的除法计算有误，24 ÷ 3 = 8 不是 7。", source:"kb_match" },
+  { id:3, question:"解方程：2(x + 5) = 26", studentAnswer:"x = 8",  correct:true,  correctAnswer:"x = 8",  explanation:"", source:"kb_match" },
+  { id:4, question:"用方程解：小明有x本书，借出5本后还剩18本", studentAnswer:"x = 22", correct:false, correctAnswer:"x = 23", explanation:"方程应为 x - 5 = 18，解得 x = 18 + 5 = 23。你的等量关系设置有误。", source:"inferred" },
+];
+
+// Pipeline step definitions
+const PIPELINE = {
+  review: [
+    { label:"解析请求", result:"G4T2·方程" },
+    { label:"向量检索", result:"召回12条" },
+    { label:"图谱遍历", result:"前置×3" },
+    { label:"重排序",   result:"Top-6✓" },
+    { label:"生成笔记", result:"完成✓" },
+  ],
+  generate: [
+    { label:"解析请求", result:"去括号·10题" },
+    { label:"题库检索", result:"样例×8" },
+    { label:"题目生成", result:"10题草稿" },
+    { label:"验证器",   result:"10/10✓" },
+    { label:"输出完成", result:"完成✓" },
+  ],
+  grade_ocr: [
+    { label:"接收图片", result:"已接收" },
+    { label:"视觉识别", result:"识别4题" },
+    { label:"结构化",   result:"JSON✓" },
+  ],
+  grade_mark: [
+    { label:"KB匹配",  result:"3命中·1推断" },
+    { label:"逐题批改", result:"✓×3 ✗×1" },
+    { label:"生成报告", result:"完成✓" },
+  ],
+  drill: [
+    { label:"加载错题", result:"错题本✓" },
+    { label:"艾宾浩斯", result:"今日3题" },
+    { label:"排序优先", result:"优先级✓" },
+    { label:"题目生成", result:"完成✓" },
+  ],
+};
+
+const COT = {
+  review: `分析参数：grade=4, term=2, unit=equations
+BGE-M3 hybrid retrieval：knowledge corpus，过滤 grade/term/unit
+图谱查询：MATCH (c:Concept)-[:BELONGS_TO]->(t:Topic {id:"G4T2.EQ"}) RETURN c
+前置概念链：字母表示数 → 等量关系 → 认识方程 → 等式性质 → 解方程
+召回12条文档，重排序完成，Top-6置信度 > 0.82
+构建三色结构：红色(定义/易错) + 蓝色(公式/性质) + 绿色(例题/口诀)
+开始流式输出…`,
+  generate: `参数：subtopic=remove_brackets, count=6, strict=false
+检索 practice corpus，过滤 subtopic=remove_brackets
+召回8道样例，难度分布：easy×2, medium×3, hard×1
+推断生成模式：仿照样例生成新题…
+Verifier：所有题目可解性验证通过 ✓
+附加难度标签、subtopic标注…`,
+  grade_ocr: `接收图片，调用 Claude Vision OCR…
+识别到4道手写题，学生答案提取完成
+置信度评估：题1(0.95) 题2(0.91) 题3(0.88) 题4(0.62)
+题4置信度偏低，已标注警告
+等待用户确认识图结果…`,
+  grade_mark: `用户确认识图准确，开始 KB 匹配批改…
+题1: ColBERT 相似度 0.94 → kb_match ✓
+题2: 相似度 0.91 → kb_match，发现计算错误
+题3: 相似度 0.88 → kb_match ✓
+题4: 相似度 0.61 → 低于阈值，LLM 推断批改，标注 inferred
+生成批改报告…`,
+  drill: `加载错题本，过滤 next_review_date <= 2026-05-03
+找到3条到期：MISTAKE.G4T2.EQ.003(.007,.011)
+间隔排序：4天 > 2天 > 1天
+艾宾浩斯调度完成，题目就绪 ✓`,
+};
+
+const REVIEW_CHUNKS = [
+  `<div style="display:flex;flex-direction:column;gap:20px">`,
+  `<div style="background:#fff;border-radius:12px;border:1.5px solid #DC262622;padding:18px 20px">`,
+  `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="width:4px;height:22px;border-radius:2px;background:#DC2626;flex-shrink:0"></div><span style="font-size:16px;font-weight:700;color:#1A1A1A">定义 · 易错点</span><span style="font-size:12px;font-weight:700;background:#DC2626;color:#fff;border-radius:4px;padding:2px 8px">必背</span></div>`,
+  `<div style="border-left:4px solid #DC2626;background:#FFF5F5;border-radius:0 8px 8px 0;padding:12px 16px;font-size:15px;line-height:1.8;margin-bottom:12px"><strong>方程：</strong>含有未知数的等式叫做方程。<br/><strong>方程的解：</strong>使方程左右两边相等的未知数的值。</div>`,
+  `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div style="background:#16A34A14;border:1.5px solid #16A34A44;border-radius:8px;padding:12px 14px"><div style="font-size:12px;font-weight:700;color:#16A34A;margin-bottom:8px">✓ 是方程</div><div style="font-size:14px;color:#1A1A1A;line-height:1.7">① 2x ＝ 6<br/>② x ＋ 5 ＝ 12<br/>③ 3(x－2) ＝ 9</div></div><div style="background:#DC262614;border:1.5px solid #DC262644;border-radius:8px;padding:12px 14px"><div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:8px">✗ 不是方程</div><div style="font-size:14px;color:#1A1A1A;line-height:1.7">① 2x（无等号）<br/>② 5＋3＝8（无未知数）<br/>③ x＋y（无等号）</div></div></div>`,
+  `<div style="display:flex;gap:10px;align-items:flex-start;background:#FFF5F5;border:1.5px solid #DC262644;border-radius:8px;padding:11px 14px"><span style="font-size:18px;flex-shrink:0">⚠️</span><div style="font-size:14px;line-height:1.7"><strong style="color:#DC2626">高频易错：</strong>必须同时满足：<span style="background:#DC262222;color:#DC2626;font-weight:700;border-radius:3px;padding:0 4px">有未知数</span> ＋ <span style="background:#DC262222;color:#DC2626;font-weight:700;border-radius:3px;padding:0 4px">有等号</span></div></div></div>`,
+  `<div style="background:#fff;border-radius:12px;border:1.5px solid #1865F222;padding:18px 20px">`,
+  `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="width:4px;height:22px;border-radius:2px;background:#1865F2;flex-shrink:0"></div><span style="font-size:16px;font-weight:700;color:#1A1A1A">公式 · 等式性质</span><span style="font-size:12px;font-weight:700;background:#1865F2;color:#fff;border-radius:4px;padding:2px 8px">核心</span></div>`,
+  `<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#5A5248;margin-bottom:6px">等式性质 1 ── 加减法</div><div style="background:#1A1A2E;color:#E8F4FD;border-radius:8px;padding:10px 16px;font-family:'Courier New',monospace;font-size:14px;line-height:1.9;white-space:pre">如果 a = b，那么：\n  a + c = b + c\n  a - c = b - c</div><div style="font-size:13px;color:#7A7167;margin-top:4px">两边同时加减相同的数，等式仍成立</div></div>`,
+  `<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#5A5248;margin-bottom:6px">去括号规则</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:#1865F214;border:1.5px solid #1865F244;border-radius:8px;padding:12px 14px"><div style="font-size:12px;font-weight:700;color:#1865F2;margin-bottom:8px">括号前是 ＋（各项不变）</div><div style="font-family:'Courier New',monospace;font-size:13px;color:#1A1A1A;line-height:1.8">+(x+3) → x+3</div></div><div style="background:#16A34A14;border:1.5px solid #16A34A44;border-radius:8px;padding:12px 14px"><div style="font-size:12px;font-weight:700;color:#16A34A;margin-bottom:8px">括号前是 －（各项变号）</div><div style="font-family:'Courier New',monospace;font-size:13px;color:#1A1A1A;line-height:1.8">-(x+3) → -x-3</div></div></div></div></div>`,
+  `<div style="background:#fff;border-radius:12px;border:1.5px solid #16A34A22;padding:18px 20px">`,
+  `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="width:4px;height:22px;border-radius:2px;background:#16A34A;flex-shrink:0"></div><span style="font-size:16px;font-weight:700;color:#1A1A1A">例题 · 口诀</span><span style="font-size:12px;font-weight:700;background:#16A34A;color:#fff;border-radius:4px;padding:2px 8px">例题</span></div>`,
+  `<div style="margin-bottom:14px"><div style="font-size:14px;font-weight:700;color:#5A5248;margin-bottom:8px">例1 · 解方程 x ＋ 23 ＝ 47</div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><div style="border:1.5px solid #16A34A;border-radius:6px;padding:7px 12px;background:#fff;font-size:13px;text-align:center;min-width:72px"><div style="font-weight:700">原方程</div><div style="font-size:11px;opacity:.7;margin-top:2px">x+23=47</div></div><span style="color:#9E9589;font-size:16px">→</span><div style="border:1.5px solid #16A34A;border-radius:6px;padding:7px 12px;background:#16A34A;color:#fff;font-size:13px;font-weight:700;text-align:center;min-width:72px"><div>移项</div><div style="font-size:11px;opacity:.8;margin-top:2px">x=47-23</div></div><span style="color:#9E9589;font-size:16px">→</span><div style="border:1.5px solid #16A34A;border-radius:6px;padding:7px 12px;background:#fff;font-size:13px;text-align:center;min-width:72px"><div style="font-weight:700">结果</div><div style="font-size:11px;opacity:.7;margin-top:2px">x = 24 ✓</div></div></div></div>`,
+  `<div style="border-left:4px solid #16A34A;background:#F0FDF4;border-radius:0 8px 8px 0;padding:12px 16px;font-size:15px;line-height:1.8;margin-bottom:14px"><strong>例2 应用题：</strong>小明有 x 本书，借出 8 本后还剩 14 本。<br/><span style="background:#16A34A22;color:#16A34A;font-weight:700;border-radius:3px;padding:0 4px">列方程</span>：x - 8 = 14 → x = <span style="background:#16A34A22;color:#16A34A;font-weight:700;border-radius:3px;padding:0 4px">22</span></div>`,
+  `<div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:8px;padding:12px 16px"><div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px">📣 记忆口诀</div><div style="font-size:15px;color:#1A1A1A;line-height:2;font-weight:500">天平两边保平衡，同加同减要记清；<br/>同乘同除不为零，等式性质是关键。</div></div></div></div>`,
+];
+
+// ─── App state machine ────────────────────────────────────────────────────────
+// Screens:
+//   "idle"            — no output yet
+//   "generating"      — pipeline + CoT running (for review/generate/drill)
+//   "review_result"   — review ThreeColorNotes shown
+//   "problem_preview" — ProblemSetPreview (generate/drill)
+//   "answering"       — AnswerSession
+//   "grading"         — GradingProgress animation
+//   "graded"          — GradingReportV2 + back to preview
+//   "ocr_running"     — pipeline running for image OCR
+//   "ocr_confirm"     — GradeConfirmPreview
+//   "grade_marking"   — GradingProgress for marking
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentColor": "#1865F2",
+  "fontSize": 16,
+  "cardRadius": 10,
+  "showSidebar": true
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // Nav
+  const [selection, setSelection] = React.useState({ grade:"G4", term:"T2", unit:"U05" });
+  const [activeAction, setActiveAction] = React.useState("review");
+  const [subtopic, setSubtopic] = React.useState("");
+  const [count, setCount] = React.useState(6);
+  const [strict, setStrict] = React.useState(false);
+
+  // Upload
+  const [uploadFile, setUploadFile] = React.useState(null);
+  const [uploadWarning, setUploadWarning] = React.useState("");
+
+  // Screen state
+  const [screen, setScreen] = React.useState("idle");
+
+  // Pipeline
+  const [pipelineKey, setPipelineKey] = React.useState("review");
+  const [pipelineStep, setPipelineStep] = React.useState(0);
+  const [cotThoughts, setCotThoughts] = React.useState("");
+  const [cotDone, setCotDone] = React.useState(false);
+
+  // Review streaming
+  const [reviewContent, setReviewContent] = React.useState("");
+  const [reviewStatus, setReviewStatus] = React.useState("idle");
+
+  // Problems
+  const [problems, setProblems] = React.useState([]);
+  const [gradingResults, setGradingResults] = React.useState(null);
+
+  // Answers (indexed by problem index)
+  const [answers, setAnswers] = React.useState({});
+
+  // Grading progress
+  const [gradedCount, setGradedCount] = React.useState(0);
+
+  // OCR
+  const [ocrResults, setOcrResults] = React.useState([]);
+
+  // Free query
+  const [freeExpanded, setFreeExpanded] = React.useState(false);
+
+  // Timers
+  const streamRef  = React.useRef(null);
+  const pipeRef    = React.useRef(null);
+  const cotRef     = React.useRef(null);
+  const gradeRef   = React.useRef(null);
+
+  function clearTimers() {
+    [streamRef, pipeRef, cotRef, gradeRef].forEach(r => { if (r.current) clearInterval(r.current); });
+  }
+
+  // Restore answers from localStorage
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("mtt_answers");
+      if (saved) setAnswers(JSON.parse(saved));
+    } catch(e) {}
+  }, []);
+
+  function handleFileSelect(f) {
+    setUploadWarning(f.size > 5*1024*1024
+      ? `图片 ${(f.size/1024/1024).toFixed(1)} MB，超过 5 MB，建议压缩后重试。` : "");
+    setUploadFile(f);
+  }
+
+  function handleStart() {
+    clearTimers();
+    setGradingResults(null);
+    setAnswers({});
+    setGradedCount(0);
+    setReviewContent("");
+
+    if (activeAction === "review") {
+      setScreen("generating");
+      setPipelineKey("review");
+      setPipelineStep(0);
+      setCotThoughts(""); setCotDone(false);
+      setReviewStatus("streaming");
+      runPipeline("review", () => runReviewStream());
+    } else if (activeAction === "generate") {
+      setScreen("generating");
+      setPipelineKey("generate");
+      setPipelineStep(0);
+      setCotThoughts(""); setCotDone(false);
+      runPipeline("generate", () => {
+        setProblems(MOCK_PROBLEMS);
+        setScreen("problem_preview");
+      });
+    } else if (activeAction === "drill") {
+      setScreen("generating");
+      setPipelineKey("drill");
+      setPipelineStep(0);
+      setCotThoughts(""); setCotDone(false);
+      runPipeline("drill", () => {
+        setProblems(MOCK_DRILL_PROBLEMS);
+        setScreen("problem_preview");
+      });
+    } else if (activeAction === "grade") {
+      // Phase 1: OCR
+      setScreen("ocr_running");
+      setPipelineKey("grade_ocr");
+      setPipelineStep(0);
+      setCotThoughts(""); setCotDone(false);
+      runPipeline("grade_ocr", () => {
+        setOcrResults(MOCK_OCR);
+        setScreen("ocr_confirm");
+      });
+    }
+  }
+
+  function runPipeline(key, onDone) {
+    const steps = PIPELINE[key] || [];
+    const cot = COT[key] || "";
+    let idx = 0;
+    setPipelineStep(0);
+
+    pipeRef.current = setInterval(() => {
+      idx++;
+      setPipelineStep(idx);
+      if (idx === 1) runCoT(cot);
+      if (idx >= steps.length) {
+        clearInterval(pipeRef.current);
+        setTimeout(onDone, 400);
+      }
+    }, 650);
+  }
+
+  function runCoT(text) {
+    let i = 0;
+    const chars = text.split("");
+    setCotThoughts(""); setCotDone(false);
+    cotRef.current = setInterval(() => {
+      i += 4;
+      setCotThoughts(chars.slice(0, i).join(""));
+      if (i >= chars.length) { clearInterval(cotRef.current); setCotDone(true); }
+    }, 16);
+  }
+
+  function runReviewStream() {
+    let i = 0, content = "";
+    streamRef.current = setInterval(() => {
+      if (i >= REVIEW_CHUNKS.length) {
+        clearInterval(streamRef.current);
+        setReviewStatus("complete");
+        setScreen("review_result");
+        return;
+      }
+      content += REVIEW_CHUNKS[i];
+      setReviewContent(content);
+      i++;
+    }, 55);
+  }
+
+  function handleStartAnswering() {
+    setAnswers({});
+    setGradingResults(null);
+    setScreen("answering");
+  }
+
+  function handleAnswerChange(idx, val) {
+    setAnswers(a => {
+      const next = { ...a, [idx]: val };
+      try { localStorage.setItem("mtt_answers", JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+  }
+
+  function handleSubmit() {
+    // Build grading input from answers + problems
+    clearTimers();
+    setGradedCount(0);
+    setScreen("grading");
+    setPipelineKey("grade_mark");
+    setPipelineStep(0);
+    setCotThoughts(""); setCotDone(false);
+
+    // Simulate grading pipeline
+    runPipeline("grade_mark", () => {
+      // Simulate per-problem grading animation
+      let n = 0;
+      gradeRef.current = setInterval(() => {
+        n++;
+        setGradedCount(n);
+        if (n >= problems.length) {
+          clearInterval(gradeRef.current);
+          // Build mock results merging answers
+          const results = problems.map((p, i) => {
+            const studentAns = (answers[i] || "").trim();
+            // Simple check: if answer contains the correct answer string
+            const isCorrect = studentAns.includes(p.answer.replace("（", "").replace("）", ""));
+            return {
+              id: p.id,
+              question: p.question,
+              studentAnswer: studentAns || "（未作答）",
+              correct: isCorrect,
+              correctAnswer: p.answer,
+              explanation: isCorrect ? "" : `正确答案是 ${p.answer}。解题过程：\n${p.solution}`,
+              source: "kb_match",
+            };
+          });
+          setGradingResults(results);
+          setTimeout(() => setScreen("graded"), 600);
+        }
+      }, 500);
+    });
+  }
+
+  function handleOcrConfirm() {
+    // Start actual grading after OCR confirm
+    clearTimers();
+    setGradedCount(0);
+    setScreen("grading");
+    setPipelineKey("grade_mark");
+    setPipelineStep(0);
+    setCotThoughts(""); setCotDone(false);
+
+    runPipeline("grade_mark", () => {
+      let n = 0;
+      gradeRef.current = setInterval(() => {
+        n++;
+        setGradedCount(n);
+        if (n >= MOCK_OCR.length) {
+          clearInterval(gradeRef.current);
+          setGradingResults(MOCK_GRADE_RESULTS);
+          // Map OCR problems for display
+          setProblems(MOCK_OCR.map((o, i) => ({
+            id: o.id, question: o.question,
+            answer: MOCK_GRADE_RESULTS[i]?.correctAnswer || "",
+            solution: "", difficulty: "medium", subtopic: "方程",
+          })));
+          setTimeout(() => setScreen("graded"), 600);
+        }
+      }, 500);
+    });
+  }
+
+  function handleReset() {
+    clearTimers();
+    setScreen("idle");
+    setReviewContent(""); setReviewStatus("idle");
+    setProblems([]); setGradingResults(null);
+    setAnswers({}); setGradedCount(0);
+    setOcrResults([]);
+    setPipelineStep(0); setCotThoughts(""); setCotDone(false);
+    setUploadFile(null); setUploadWarning("");
+  }
+
+  // ── Render main content ─────────────────────────────────────────────────────
+  function renderMain() {
+    // Idle placeholder
+    if (screen === "idle") {
+      const meta = {
+        review:   { icon:"📚", text:"选择单元后点击「开始」，AI 将生成三色复习笔记" },
+        generate: { icon:"📝", text:"设置参数后点击「开始」，AI 将生成练习题供你作答" },
+        grade:    { icon:"📷", text:"上传作业图片后点击「开始」，AI 将识图并批改" },
+        drill:    { icon:"💪", text:"点击「开始」，加载今日艾宾浩斯错题进行练习" },
+      };
+      const m = meta[activeAction] || meta.review;
+      return (
+        <div className="output-placeholder fade-in">
+          <div className="output-placeholder-icon">{m.icon}</div>
+          <div className="output-placeholder-text">{m.text}</div>
+        </div>
+      );
+    }
+
+    // Generating (review/generate/drill) — pipeline + CoT + skeleton
+    if (screen === "generating") {
+      return (
+        <div className="fade-in" style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <AgentPipeline steps={PIPELINE[pipelineKey] || []} currentStep={pipelineStep} />
+          <CoTStream thoughts={cotThoughts} isThinking={!cotDone} expanded={true} onToggle={() => {}} />
+          {pipelineKey === "review" && reviewContent && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1.5px solid #EDE8DF", padding:"20px 24px" }}>
+              <div dangerouslySetInnerHTML={{ __html: reviewContent }} style={{ fontSize:16, lineHeight:1.8 }} />
+            </div>
+          )}
+          {pipelineKey === "review" && !reviewContent && (
+            <div style={{ background:"#fff", borderRadius:12, border:"1.5px solid #EDE8DF", padding:"20px 24px" }}>
+              <StreamingSkeleton />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Review result
+    if (screen === "review_result") {
+      return (
+        <div className="fade-in" style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+            background:"#F0FDF4", borderRadius:10, border:"1.5px solid #86EFAC", padding:"10px 16px" }}>
+            <span style={{ fontSize:14, color:"#16A34A", fontWeight:600 }}>✓ 三色笔记生成完成</span>
+            <div style={{ display:"flex", gap:8 }}>
+              <button style={btnStyle.secondary} onClick={() => window.print()}>🖨 打印</button>
+              <button style={btnStyle.ghost} onClick={handleReset}>重新开始</button>
+            </div>
+          </div>
+          <ThreeColorNotes unit="认识方程" />
+        </div>
+      );
+    }
+
+    // Problem preview (generate / drill)
+    if (screen === "problem_preview") {
+      return (
+        <div className="fade-in">
+          <ProblemSetPreview
+            problems={problems}
+            gradingResults={gradingResults}
+            onStartAnswering={handleStartAnswering}
+            mode={activeAction}
+          />
+        </div>
+      );
+    }
+
+    // Answer session
+    if (screen === "answering") {
+      return (
+        <div className="fade-in" style={{ height:"100%", minHeight:540 }}>
+          <AnswerSession
+            problems={problems}
+            answers={answers}
+            onAnswerChange={handleAnswerChange}
+            onSubmit={handleSubmit}
+            onBack={() => setScreen("problem_preview")}
+          />
+        </div>
+      );
+    }
+
+    // OCR running
+    if (screen === "ocr_running") {
+      return (
+        <div className="fade-in" style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <AgentPipeline steps={PIPELINE.grade_ocr} currentStep={pipelineStep} />
+          <CoTStream thoughts={cotThoughts} isThinking={!cotDone} expanded={true} onToggle={() => {}} />
+          <div style={{ background:"#fff", borderRadius:12, border:"1.5px solid #EDE8DF", padding:"20px 24px" }}>
+            <StreamingSkeleton />
+          </div>
+        </div>
+      );
+    }
+
+    // OCR confirm
+    if (screen === "ocr_confirm") {
+      return (
+        <div className="fade-in">
+          <GradeConfirmPreview
+            ocrResults={ocrResults}
+            onConfirm={handleOcrConfirm}
+            onCancel={handleReset}
+          />
+        </div>
+      );
+    }
+
+    // Grading in progress
+    if (screen === "grading") {
+      return (
+        <div className="fade-in" style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <AgentPipeline steps={PIPELINE[pipelineKey] || []} currentStep={pipelineStep} />
+          <CoTStream thoughts={cotThoughts} isThinking={!cotDone} expanded={false} onToggle={() => {}} />
+          <GradingProgress
+            problems={problems.length ? problems : MOCK_OCR.map((o,i) => ({ id:o.id, question:o.question }))}
+            gradedCount={gradedCount}
+            pipelineSteps={PIPELINE.grade_mark}
+            currentPipelineStep={pipelineStep}
+          />
+        </div>
+      );
+    }
+
+    // Graded results
+    if (screen === "graded") {
+      return (
+        <div className="fade-in" style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+            background:"#F0FDF4", borderRadius:10, border:"1.5px solid #86EFAC", padding:"10px 16px" }}>
+            <span style={{ fontSize:14, color:"#16A34A", fontWeight:600 }}>✓ 批改完成</span>
+            <div style={{ display:"flex", gap:8 }}>
+              <button style={btnStyle.secondary}
+                onClick={() => setScreen("problem_preview")}>
+                返回题目预览
+              </button>
+              <button style={btnStyle.ghost} onClick={handleReset}>重新开始</button>
+            </div>
+          </div>
+          <GradingReportV2 results={gradingResults} problems={problems} />
+          {/* Also show preview with results */}
+          <ProblemSetPreview
+            problems={problems}
+            gradingResults={gradingResults}
+            onStartAnswering={handleStartAnswering}
+            mode={activeAction}
+          />
+        </div>
+      );
+    }
+
+    return null;
+  }
+
+  const btnStyle = {
+    primary: {
+      padding:"8px 18px", height:38, background:"#1865F2", color:"#fff",
+      border:"none", borderRadius:8, fontSize:14, fontWeight:600,
+      cursor:"pointer", fontFamily:"inherit",
+    },
+    secondary: {
+      padding:"8px 18px", height:38, background:"#fff", color:"#1865F2",
+      border:"1.5px solid #1865F2", borderRadius:8, fontSize:14, fontWeight:600,
+      cursor:"pointer", fontFamily:"inherit",
+    },
+    ghost: {
+      padding:"8px 18px", height:38, background:"#fff", color:"#7A7167",
+      border:"1.5px solid #DDD8CE", borderRadius:8, fontSize:14, fontWeight:500,
+      cursor:"pointer", fontFamily:"inherit",
+    },
+  };
+
+  // ── Sidebar ─────────────────────────────────────────────────────────────────
+  const sidebar = (
+    <>
+      <div>
+        <div className="section-title">选择操作</div>
+        <ActionPanel
+          activeAction={activeAction}
+          onSelect={setActiveAction}
+          selection={selection}
+          subtopic={subtopic}
+          onSubtopicChange={setSubtopic}
+          count={count}
+          onCountChange={setCount}
+          strict={strict}
+          onStrictChange={setStrict}
+        />
+      </div>
+      {activeAction === "grade" && (
+        <div>
+          <div className="section-title">上传作业</div>
+          <GradePanel onFileSelect={handleFileSelect} file={uploadFile} warning={uploadWarning} />
+        </div>
+      )}
+      <div>
+        <FreeQueryInput expanded={freeExpanded} onToggle={() => setFreeExpanded(v => !v)} />
+      </div>
+    </>
+  );
+
+  return (
+    <div id="app-shell" style={{ fontSize: tweaks.fontSize, "--blue": tweaks.accentColor }}>
+      <div id="top-nav">
+        <CurriculumNav
+          selection={selection}
+          onChange={sel => { setSelection(sel); handleReset(); }}
+          onStart={handleStart}
+          disabled={screen === "generating" || screen === "ocr_running" || screen === "grading"}
+        />
+      </div>
+      <div id="body">
+        {tweaks.showSidebar && <div id="sidebar">{sidebar}</div>}
+        <div id="main-content">{renderMain()}</div>
+      </div>
+
+      {/* Mobile bottom tabs */}
+      <div id="mobile-bottom">
+        {[
+          { id:"review",   icon:"📚", label:"复习" },
+          { id:"generate", icon:"📝", label:"练习" },
+          { id:"grade",    icon:"📷", label:"批改" },
+          { id:"drill",    icon:"💪", label:"夯实" },
+        ].map(t => (
+          <button key={t.id}
+            className={`mobile-tab${activeAction === t.id ? " active" : ""}`}
+            onClick={() => { setActiveAction(t.id); handleReset(); }}
+          >
+            <span className="mobile-tab-icon">{t.icon}</span>
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tweaks */}
+      <TweaksPanel tweaks={tweaks} setTweak={setTweak}>
+        <TweakSection title="外观">
+          <TweakColor  id="accentColor"  label="主题色"   value={tweaks.accentColor}  onChange={v => setTweak("accentColor", v)} />
+          <TweakSlider id="fontSize"     label="字号"     value={tweaks.fontSize}     onChange={v => setTweak("fontSize", v)}     min={14} max={20} step={1} />
+          <TweakSlider id="cardRadius"   label="圆角"     value={tweaks.cardRadius}   onChange={v => setTweak("cardRadius", v)}   min={4}  max={20} step={2} />
+          <TweakToggle id="showSidebar"  label="侧边栏"   value={tweaks.showSidebar}  onChange={v => setTweak("showSidebar", v)} />
+        </TweakSection>
+        <TweakSection title="快速演示">
+          <TweakButton label="📚 复习笔记" onClick={() => { setActiveAction("review");   handleStart(); }} />
+          <TweakButton label="📝 练习题"   onClick={() => { setActiveAction("generate"); handleStart(); }} />
+          <TweakButton label="📷 作业批改" onClick={() => { setActiveAction("grade");    handleStart(); }} />
+          <TweakButton label="💪 错题夯实" onClick={() => { setActiveAction("drill");    handleStart(); }} />
+          <TweakButton label="重置"        onClick={handleReset} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
