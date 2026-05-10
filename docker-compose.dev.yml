@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  neo4j:
+    image: neo4j:5.26.0-community
+    container_name: math-to-go-neo4j-dev
+    ports:
+      - "7474:7474"   # HTTP browser
+      - "7687:7687"   # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/math-to-go-dev
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+    volumes:
+      - neo4j_dev_data:/data
+      - neo4j_dev_logs:/logs
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  chromadb:
+    image: chromadb/chroma:0.6.3
+    container_name: math-to-go-chroma-dev
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_dev_data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  neo4j_dev_data:
+  neo4j_dev_logs:
+  chroma_dev_data:

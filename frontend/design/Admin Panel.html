@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>管理后台 · math-to-go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: "Noto Sans SC","PingFang SC",sans-serif;
+    background: #F5F3EF; color: #1A1A1A; font-size: 15px; -webkit-font-smoothing: antialiased; }
+  #root { height: 100%; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #DDD8CE; border-radius: 3px; }
+  @keyframes pulse   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+  @keyframes shimmer { 0%{background:#EDE8DF} 50%{background:#F5F3EF} 100%{background:#EDE8DF} }
+  @keyframes fadeIn  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes ripple  { 0%{transform:scale(.8);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+  @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes thinkDot { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.1);opacity:1} }
+  .fade-in { animation: fadeIn .25s ease both; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #1865F2 !important; box-shadow: 0 0 0 3px rgba(24,101,242,0.1); }
+
+  /* Layout */
+  #shell { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+  #topbar { height:56px; background:#fff; border-bottom:1px solid #EDE8DF;
+    display:flex; align-items:center; padding:0 24px; gap:16px; flex-shrink:0; z-index:100; }
+  #body   { display:flex; flex:1; overflow:hidden; }
+  #sidenav { width:220px; flex-shrink:0; background:#fff; border-right:1px solid #EDE8DF;
+    display:flex; flex-direction:column; padding:16px 12px; gap:4px; overflow-y:auto; }
+  #content { flex:1; overflow-y:auto; padding:28px 32px; }
+
+  .nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px;
+    cursor:pointer; font-size:14px; color:#5A5248; font-weight:500; border:none;
+    background:none; fontFamily:inherit; width:100%; text-align:left; transition:all .15s; }
+  .nav-item:hover   { background:#F5F3EF; color:#1A1A1A; }
+  .nav-item.active  { background:#EEF3FF; color:#1865F2; font-weight:700; }
+  .nav-section { font-size:11px; font-weight:700; color:#9E9589; text-transform:uppercase;
+    letter-spacing:.06em; padding:10px 12px 4px; }
+
+  .page-title { font-size:20px; font-weight:800; color:#1A1A1A; margin-bottom:4px; }
+  .page-sub   { font-size:13px; color:#7A7167; margin-bottom:24px; }
+
+  .card { background:#fff; border-radius:12px; border:1.5px solid #EDE8DF; padding:20px 24px; }
+  .btn-primary { padding:0 20px; height:38px; background:#1865F2; color:#fff;
+    border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-secondary { padding:0 16px; height:38px; background:#fff; color:#1865F2;
+    border:1.5px solid #1865F2; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-ghost { padding:0 16px; height:36px; background:#fff; color:#5A5248;
+    border:1.5px solid #DDD8CE; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; }
+  .btn-danger { padding:0 16px; height:36px; background:#FFF5F5; color:#DC2626;
+    border:1.5px solid #FCA5A5; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .tag { display:inline-flex; align-items:center; font-size:12px; font-weight:600;
+    border-radius:6px; padding:2px 8px; }
+  .tag-concept    { background:#EEF3FF; color:#1865F2; }
+  .tag-heuristic  { background:#F0FDF4; color:#16A34A; }
+  .tag-exercise   { background:#FFFBEB; color:#D97706; }
+  .tag-mistake    { background:#FFF5F5; color:#DC2626; }
+  .tag-active     { background:#F0FDF4; color:#16A34A; }
+  .tag-draft      { background:#F5F3EF; color:#9E9589; }
+  .tag-deprecated { background:#FFF5F5; color:#DC2626; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+
+// ─── Mock data ────────────────────────────────────────────────────────────────
+const MOCK_DOCS = [
+  { id:"CONCEPT.G4T2.EQ.001", type:"concept",    title:"方程的定义",        unit:"认识方程", grade:"G4", term:"T2", subtopic:"equation_definition", difficulty:"easy",   status:"active",   version:"v0.0.2", size:"2.1KB", updated:"2026-05-01" },
+  { id:"CONCEPT.G4T2.EQ.002", type:"concept",    title:"等式的性质",        unit:"认识方程", grade:"G4", term:"T2", subtopic:"equation_properties",  difficulty:"medium", status:"active",   version:"v0.0.2", size:"1.8KB", updated:"2026-05-01" },
+  { id:"HEUR.G4T2.EQ.001",    type:"heuristic",  title:"天平模型记忆技巧",  unit:"认识方程", grade:"G4", term:"T2", subtopic:"equation_definition", difficulty:"easy",   status:"active",   version:"v0.0.2", size:"0.9KB", updated:"2026-04-28" },
+  { id:"HEUR.G4T2.EQ.002",    type:"heuristic",  title:"去括号口诀",        unit:"认识方程", grade:"G4", term:"T2", subtopic:"remove_brackets",     difficulty:"medium", status:"active",   version:"v0.0.2", size:"0.7KB", updated:"2026-04-28" },
+  { id:"EX.G4T2.EQ.001",      type:"exercise",   title:"解方程基础练习×10", unit:"认识方程", grade:"G4", term:"T2", subtopic:"solve_basic",         difficulty:"easy",   status:"active",   version:"v0.0.1", size:"4.2KB", updated:"2026-04-20" },
+  { id:"EX.G4T2.EQ.015",      type:"exercise",   title:"去括号解方程×8",    unit:"认识方程", grade:"G4", term:"T2", subtopic:"remove_brackets",     difficulty:"medium", status:"active",   version:"v0.0.2", size:"3.6KB", updated:"2026-05-01" },
+  { id:"EX.G4T2.EQ.022",      type:"exercise",   title:"应用题练习×5",      unit:"认识方程", grade:"G4", term:"T2", subtopic:"word_problems",       difficulty:"hard",   status:"draft",    version:"v0.0.3", size:"2.8KB", updated:"2026-05-03" },
+  { id:"MISTAKE.G4T2.EQ.003", type:"mistake",    title:"去括号符号错误",    unit:"认识方程", grade:"G4", term:"T2", subtopic:"remove_brackets",     difficulty:"medium", status:"active",   version:"v0.0.1", size:"1.1KB", updated:"2026-04-15" },
+  { id:"MISTAKE.G4T2.EQ.007", type:"mistake",    title:"移项变号遗漏",      unit:"认识方程", grade:"G4", term:"T2", subtopic:"equation_properties", difficulty:"medium", status:"active",   version:"v0.0.1", size:"0.9KB", updated:"2026-04-18" },
+  { id:"MISTAKE.G4T2.EQ.011", type:"mistake",    title:"应用题等量关系错误", unit:"认识方程", grade:"G4", term:"T2", subtopic:"word_problems",      difficulty:"hard",   status:"draft",    version:"v0.0.3", size:"1.3KB", updated:"2026-05-03" },
+];
+
+const MOCK_VERSIONS = [
+  { version:"v0.0.3", status:"draft",      date:"2026-05-03", author:"张老师", docs:3,  changes:"新增应用题集×2，更新错题模板", units:[] },
+  { version:"v0.0.2", status:"active",     date:"2026-05-01", author:"张老师", docs:8,  changes:"完善去括号内容，新增口诀文档", units:["认识方程","小数乘法"] },
+  { version:"v0.0.1", status:"active",     date:"2026-04-20", author:"张老师", docs:12, changes:"初始版本，基础方程单元", units:["小数加减法","三角形","小数除法","数据分析"] },
+  { version:"v0.0.0", status:"deprecated", date:"2026-04-10", author:"系统",   docs:5,  changes:"测试版本", units:[] },
+];
+
+const MOCK_UNIT_VERSIONS = [
+  { unit:"U01", name:"小数的意义和加减法", version:"v0.0.1", docs:15, lastSync:"2026-04-20" },
+  { unit:"U02", name:"认识三角形和四边形", version:"v0.0.1", docs:12, lastSync:"2026-04-20" },
+  { unit:"U03", name:"小数乘法",           version:"v0.0.2", docs:18, lastSync:"2026-05-01" },
+  { unit:"U04", name:"小数除法",           version:"v0.0.1", docs:16, lastSync:"2026-04-20" },
+  { unit:"U05", name:"认识方程",           version:"v0.0.2", docs:10, lastSync:"2026-05-01" },
+  { unit:"U06", name:"数据的表示和分析",   version:"v0.0.1", docs:9,  lastSync:"2026-04-20" },
+];
+
+const MOCK_STUDENTS = [
+  { id:"s001", name:"李小明", avatar:"👦", grade:"四年级二班", reviewed:42, mastered:35, accuracy:83, streak:7,  lastActive:"今天", mistakes:8,  ebToday:3 },
+  { id:"s002", name:"王小红", avatar:"👧", grade:"四年级二班", reviewed:38, mastered:30, accuracy:79, streak:12, lastActive:"今天", mistakes:5,  ebToday:2 },
+  { id:"s003", name:"陈大壮", avatar:"👦", grade:"四年级二班", reviewed:55, mastered:48, accuracy:87, streak:21, lastActive:"昨天", mistakes:3,  ebToday:1 },
+  { id:"s004", name:"刘晓晴", avatar:"👧", grade:"四年级二班", reviewed:28, mastered:20, accuracy:71, streak:3,  lastActive:"3天前", mistakes:12, ebToday:5 },
+];
+
+const PIPELINE_RELEASE = [
+  { label:"git add",     result:"暂存完成" },
+  { label:"git commit",  result:"提交✓" },
+  { label:"git push",    result:"推送✓" },
+  { label:"PR 审查",     result:"Auto-merge✓" },
+  { label:"向量化",      result:"已入库" },
+  { label:"KB Release",  result:"v0.0.3 发布" },
+];
+
+// ─── AgentPipeline (inline, no dep on components.jsx) ────────────────────────
+function AgentPipeline({ steps, currentStep }) {
+  return (
+    <div style={{ position:"relative", display:"flex", alignItems:"flex-start",
+      justifyContent:"space-between", padding:"20px 16px 16px",
+      background:"#F8F5F0", borderRadius:12, border:"1.5px solid #EDE8DF" }}>
+      {/* track */}
+      <div style={{ position:"absolute", top:36, left:"calc(16px + 12px)",
+        right:"calc(16px + 12px)", height:2, background:"#DDD8CE", borderRadius:1, zIndex:0 }}>
+        <div style={{ height:"100%", background:"#1865F2", borderRadius:1,
+          transition:"width .5s ease",
+          width: currentStep >= steps.length ? "100%" : `${(currentStep / Math.max(steps.length-1,1))*100}%`,
+        }} />
+      </div>
+      {steps.map((step, i) => {
+        const state = i < currentStep ? "done" : i === currentStep ? "running" : "pending";
+        return (
+          <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center",
+            gap:6, flex:1, position:"relative", zIndex:1, minWidth:0 }}>
+            <div style={{ position:"relative", display:"flex", alignItems:"center", justifyContent:"center", width:28, height:28 }}>
+              {state === "running" && (
+                <div style={{ position:"absolute", inset:-6, borderRadius:"50%",
+                  border:"2px solid rgba(24,101,242,0.35)", animation:"ripple 1.4s ease-out infinite" }} />
+              )}
+              <div style={{ width:24, height:24, borderRadius:"50%",
+                background: state === "done" ? "#1865F2" : state === "running" ? "#1865F2" : "#DDD8CE",
+                display:"flex", alignItems:"center", justifyContent:"center", transition:"all .3s",
+                boxShadow: state === "running" ? "0 0 0 3px rgba(24,101,242,0.25)" : "none" }}>
+                {state === "done" && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4l3 3 5-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+                {state === "running" && (
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:"#fff", animation:"pulse 1s infinite" }} />
+                )}
+              </div>
+            </div>
+            <div style={{ fontSize:12, textAlign:"center", lineHeight:1.3, maxWidth:72,
+              color: state === "pending" ? "#9E9589" : "#1A1A1A",
+              fontWeight: state === "running" ? 700 : 500 }}>{step.label}</div>
+            {state === "running" && (
+              <div style={{ fontSize:11, color:"#1865F2", fontWeight:600, animation:"pulse 1.5s infinite" }}>运行中…</div>
+            )}
+            {state === "done" && step.result && (
+              <div style={{ fontSize:11, color:"#16A34A", fontWeight:600, textAlign:"center", maxWidth:72 }}>{step.result}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Pages ────────────────────────────────────────────────────────────────────
+
+// ── StudentOverview ───────────────────────────────────────────────────────────
+function StudentOverview() {
+  const [selected, setSelected] = React.useState(null);
+  const s = selected ? MOCK_STUDENTS.find(s => s.id === selected) : null;
+
+  return (
+    <div className="fade-in">
+      <div className="page-title">学生成长概览</div>
+      <div className="page-sub">四年级二班 · {MOCK_STUDENTS.length} 名学生</div>
+
+      {/* Summary stats */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:12, marginBottom:20 }}>
+        {[
+          { label:"班级平均正确率", value:"80%",  color:"#1865F2", icon:"📊" },
+          { label:"今日活跃学生",  value:"2名",  color:"#16A34A", icon:"🟢" },
+          { label:"待复习错题",    value:"28题", color:"#D97706", icon:"⏱" },
+          { label:"平均连续打卡",  value:"10天", color:"#DC2626", icon:"🔥" },
+        ].map(s => (
+          <div key={s.label} className="card" style={{ display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span>{s.icon}</span>
+              <span style={{ fontSize:12, color:"#7A7167" }}>{s.label}</span>
+            </div>
+            <div style={{ fontSize:26, fontWeight:800, color:s.color }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Student list */}
+      <div className="card" style={{ padding:0, overflow:"hidden" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <thead>
+            <tr style={{ background:"#F8F5F0", borderBottom:"1px solid #EDE8DF" }}>
+              {["学生","复习题数","掌握题数","正确率","连续打卡","错题数","今日待复习","最后活跃"].map(h => (
+                <th key={h} style={{ padding:"10px 16px", fontSize:12, fontWeight:700,
+                  color:"#7A7167", textAlign:"left", whiteSpace:"nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {MOCK_STUDENTS.map((stu, i) => (
+              <tr key={stu.id}
+                style={{ borderBottom:"1px solid #EDE8DF", cursor:"pointer",
+                  background: selected === stu.id ? "#F0F5FF" : i%2===0 ? "#fff" : "#FDFAF6" }}
+                onClick={() => setSelected(selected === stu.id ? null : stu.id)}>
+                <td style={{ padding:"12px 16px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:20 }}>{stu.avatar}</span>
+                    <div>
+                      <div style={{ fontWeight:700, fontSize:14 }}>{stu.name}</div>
+                      <div style={{ fontSize:12, color:"#9E9589" }}>{stu.grade}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style={{ padding:"12px 16px", fontSize:14 }}>{stu.reviewed}</td>
+                <td style={{ padding:"12px 16px", fontSize:14 }}>{stu.mastered}</td>
+                <td style={{ padding:"12px 16px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                    <div style={{ width:60, height:6, background:"#EDE8DF", borderRadius:3 }}>
+                      <div style={{ height:"100%", width:`${stu.accuracy}%`, borderRadius:3,
+                        background: stu.accuracy>=85?"#16A34A":stu.accuracy>=75?"#D97706":"#DC2626" }} />
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:600 }}>{stu.accuracy}%</span>
+                  </div>
+                </td>
+                <td style={{ padding:"12px 16px" }}>
+                  <span style={{ fontSize:13, fontWeight:700, color:"#D97706" }}>🔥 {stu.streak}天</span>
+                </td>
+                <td style={{ padding:"12px 16px" }}>
+                  <span style={{ fontSize:14, color: stu.mistakes>8?"#DC2626":"#1A1A1A", fontWeight:stu.mistakes>8?700:400 }}>
+                    {stu.mistakes}
+                  </span>
+                </td>
+                <td style={{ padding:"12px 16px" }}>
+                  <span style={{ fontSize:13, fontWeight:600,
+                    background: stu.ebToday>0?"#FFF3E0":"#F5F3EF",
+                    color: stu.ebToday>0?"#D97706":"#9E9589",
+                    borderRadius:6, padding:"2px 8px" }}>{stu.ebToday}题</span>
+                </td>
+                <td style={{ padding:"12px 16px", fontSize:13, color:"#7A7167" }}>{stu.lastActive}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Expanded student detail */}
+      {s && (
+        <div className="card fade-in" style={{ marginTop:16 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16 }}>
+            <span style={{ fontSize:28 }}>{s.avatar}</span>
+            <div>
+              <div style={{ fontSize:17, fontWeight:700 }}>{s.name} · 成长详情</div>
+              <div style={{ fontSize:13, color:"#7A7167" }}>{s.grade}</div>
+            </div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+            {[
+              { label:"艾宾浩斯完成率", value:"92%", color:"#1865F2" },
+              { label:"错题清零率",     value:`${Math.round(s.mastered/s.reviewed*100)}%`, color:"#16A34A" },
+              { label:"本月练习题数",   value:`${s.reviewed}题`, color:"#D97706" },
+            ].map(m => (
+              <div key={m.label} style={{ background:"#F8F5F0", borderRadius:10, padding:"12px 16px" }}>
+                <div style={{ fontSize:12, color:"#7A7167", marginBottom:4 }}>{m.label}</div>
+                <div style={{ fontSize:22, fontWeight:800, color:m.color }}>{m.value}</div>
+              </div>
+            ))}
+          </div>
+          {/* Ebbinghaus timeline */}
+          <div style={{ marginTop:14 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:"#5A5248", marginBottom:8 }}>艾宾浩斯复习间隔分布</div>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {[
+                { label:"1天", count:2, color:"#DC2626" },
+                { label:"2天", count:1, color:"#D97706" },
+                { label:"4天", count:3, color:"#1865F2" },
+                { label:"7天", count:1, color:"#1865F2" },
+                { label:"已掌握", count:s.mastered, color:"#16A34A" },
+              ].map(b => (
+                <div key={b.label} style={{ background:b.color+"14", border:`1.5px solid ${b.color}44`,
+                  borderRadius:8, padding:"8px 14px", display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+                  <span style={{ fontSize:18, fontWeight:800, color:b.color }}>{b.count}</span>
+                  <span style={{ fontSize:11, color:"#7A7167" }}>{b.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── KBDocManager ──────────────────────────────────────────────────────────────
+function KBDocManager() {
+  const [docs, setDocs]         = React.useState(MOCK_DOCS);
+  const [filter, setFilter]     = React.useState("all");
+  const [search, setSearch]     = React.useState("");
+  const [uploading, setUploading] = React.useState(false);
+  const [selected, setSelected] = React.useState(null);
+  const [showUpload, setShowUpload] = React.useState(false);
+  const [newDocType, setNewDocType] = React.useState("concept");
+  const [deleteConfirm, setDeleteConfirm] = React.useState(null);
+  const fileRef = React.useRef();
+
+  const typeColors = { concept:"concept", heuristic:"heuristic", exercise:"exercise", mistake:"mistake" };
+  const typeIcons  = { concept:"📖", heuristic:"💡", exercise:"📝", mistake:"⚠️" };
+
+  const filtered = docs.filter(d => {
+    const matchType = filter === "all" || d.type === filter;
+    const matchSearch = !search || d.title.includes(search) || d.id.includes(search) || d.subtopic.includes(search);
+    return matchType && matchSearch;
+  });
+
+  function handleDelete(id) {
+    setDocs(d => d.filter(doc => doc.id !== id));
+    setDeleteConfirm(null);
+    setSelected(null);
+  }
+
+  function handleUpload() {
+    setUploading(true);
+    setTimeout(() => {
+      const newId = `${newDocType.toUpperCase().slice(0,2)}.G4T2.EQ.${String(docs.length+1).padStart(3,"0")}`;
+      const typeMap = { concept:"CONCEPT", heuristic:"HEUR", exercise:"EX", mistake:"MISTAKE" };
+      const fullId = `${typeMap[newDocType]}.G4T2.EQ.${String(docs.length+1).padStart(3,"0")}`;
+      setDocs(d => [...d, {
+        id:fullId, type:newDocType, title:"新上传文档（待编辑）",
+        unit:"认识方程", grade:"G4", term:"T2", subtopic:"equation_definition",
+        difficulty:"easy", status:"draft", version:"v0.0.3",
+        size:"0.5KB", updated:"2026-05-03",
+      }]);
+      setUploading(false);
+      setShowUpload(false);
+    }, 1200);
+  }
+
+  const sel = selected ? docs.find(d => d.id === selected) : null;
+
+  return (
+    <div className="fade-in">
+      <div className="page-title">文档库管理</div>
+      <div className="page-sub">knowledge_base/docs/ · 共 {docs.length} 份文档</div>
+
+      {/* Toolbar */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16, flexWrap:"wrap" }}>
+        {/* Type filter */}
+        <div style={{ display:"flex", gap:6 }}>
+          {["all","concept","heuristic","exercise","mistake"].map(t => (
+            <button key={t} onClick={() => setFilter(t)}
+              style={{ padding:"6px 12px", height:34, border:"1.5px solid",
+                borderColor: filter===t ? "#1865F2" : "#DDD8CE",
+                borderRadius:8, background: filter===t ? "#EEF3FF" : "#fff",
+                color: filter===t ? "#1865F2" : "#5A5248",
+                fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+              {t === "all" ? "全部" : `${typeIcons[t]} ${t}`}
+            </button>
+          ))}
+        </div>
+        {/* Search */}
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="搜索文档名称、ID…"
+          style={{ height:34, borderRadius:8, border:"1.5px solid #DDD8CE",
+            padding:"0 12px", fontSize:14, fontFamily:"inherit", minWidth:200 }}
+        />
+        <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
+          <button className="btn-primary" onClick={() => setShowUpload(true)}>
+            + 上传文档
+          </button>
+        </div>
+      </div>
+
+      {/* Upload panel */}
+      {showUpload && (
+        <div className="card fade-in" style={{ marginBottom:16, borderColor:"#1865F244", background:"#F5F8FF" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+            <span style={{ fontSize:15, fontWeight:700 }}>上传新文档</span>
+            <button className="btn-ghost" onClick={() => setShowUpload(false)}>取消</button>
+          </div>
+          <div style={{ display:"flex", gap:12, alignItems:"flex-end", flexWrap:"wrap" }}>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              <label style={{ fontSize:13, fontWeight:600, color:"#5A5248" }}>文档类型</label>
+              <select value={newDocType} onChange={e => setNewDocType(e.target.value)}
+                style={{ height:38, borderRadius:8, border:"1.5px solid #DDD8CE",
+                  padding:"0 12px", fontSize:14, fontFamily:"inherit", minWidth:160 }}>
+                <option value="concept">📖 concept — 知识点</option>
+                <option value="heuristic">💡 heuristic — 答题技巧</option>
+                <option value="exercise">📝 exercise — 新题库</option>
+                <option value="mistake">⚠️ mistake — 错题集</option>
+              </select>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              <label style={{ fontSize:13, fontWeight:600, color:"#5A5248" }}>选择文件</label>
+              <input ref={fileRef} type="file" accept=".md,.yaml,.txt"
+                style={{ height:38, fontSize:14, fontFamily:"inherit" }} />
+            </div>
+            <button className="btn-primary" onClick={handleUpload} disabled={uploading}
+              style={{ opacity: uploading ? 0.7 : 1 }}>
+              {uploading ? "上传中…" : "确认上传"}
+            </button>
+          </div>
+          <div style={{ marginTop:10, fontSize:13, color:"#7A7167" }}>
+            支持 Markdown (.md) 和 YAML (.yaml) 格式 · 上传后状态为 draft，需发布后生效
+          </div>
+        </div>
+      )}
+
+      {/* Doc table + detail panel */}
+      <div style={{ display:"grid", gridTemplateColumns: sel ? "1fr 360px" : "1fr", gap:12, alignItems:"start" }}>
+        {/* Table */}
+        <div className="card" style={{ padding:0, overflow:"hidden" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+            <thead>
+              <tr style={{ background:"#F8F5F0", borderBottom:"1px solid #EDE8DF" }}>
+                {["类型","文档 ID","标题","子主题","难度","版本","状态","操作"].map(h => (
+                  <th key={h} style={{ padding:"9px 14px", fontSize:12, fontWeight:700,
+                    color:"#7A7167", textAlign:"left", whiteSpace:"nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((doc, i) => (
+                <tr key={doc.id}
+                  style={{ borderBottom:"1px solid #EDE8DF", cursor:"pointer",
+                    background: selected===doc.id ? "#F0F5FF" : i%2===0 ? "#fff" : "#FDFAF6" }}
+                  onClick={() => setSelected(selected===doc.id ? null : doc.id)}>
+                  <td style={{ padding:"10px 14px" }}>
+                    <span className={`tag tag-${doc.type}`}>{typeIcons[doc.type]} {doc.type}</span>
+                  </td>
+                  <td style={{ padding:"10px 14px" }}>
+                    <code style={{ fontSize:11, color:"#5A5248", background:"#F5F3EF",
+                      borderRadius:4, padding:"2px 6px" }}>{doc.id}</code>
+                  </td>
+                  <td style={{ padding:"10px 14px", fontSize:14, fontWeight:500, maxWidth:180 }}>{doc.title}</td>
+                  <td style={{ padding:"10px 14px", fontSize:12, color:"#7A7167" }}>{doc.subtopic}</td>
+                  <td style={{ padding:"10px 14px" }}>
+                    <span style={{ fontSize:12, fontWeight:600, borderRadius:6, padding:"2px 8px",
+                      color:{easy:"#16A34A",medium:"#D97706",hard:"#DC2626"}[doc.difficulty],
+                      background:{easy:"#F0FDF4",medium:"#FFFBEB",hard:"#FFF5F5"}[doc.difficulty] }}>
+                      {doc.difficulty}
+                    </span>
+                  </td>
+                  <td style={{ padding:"10px 14px" }}>
+                    <code style={{ fontSize:12, color:"#1865F2", fontWeight:700 }}>{doc.version}</code>
+                  </td>
+                  <td style={{ padding:"10px 14px" }}>
+                    <span className={`tag tag-${doc.status}`}>{doc.status}</span>
+                  </td>
+                  <td style={{ padding:"10px 14px" }}>
+                    <div style={{ display:"flex", gap:6 }} onClick={e => e.stopPropagation()}>
+                      <button className="btn-ghost" style={{ height:28, fontSize:12, padding:"0 10px" }}
+                        onClick={() => setSelected(doc.id)}>编辑</button>
+                      <button className="btn-danger" style={{ height:28, fontSize:12, padding:"0 10px" }}
+                        onClick={() => setDeleteConfirm(doc.id)}>删除</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Detail panel */}
+        {sel && (
+          <div className="card fade-in" style={{ position:"sticky", top:0 }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+              <span style={{ fontSize:15, fontWeight:700 }}>文档详情</span>
+              <button className="btn-ghost" style={{ height:28, fontSize:12, padding:"0 10px" }}
+                onClick={() => setSelected(null)}>×</button>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {[
+                ["doc_id",    sel.id],
+                ["type",      sel.type],
+                ["title",     sel.title],
+                ["unit",      sel.unit],
+                ["subtopic",  sel.subtopic],
+                ["difficulty",sel.difficulty],
+                ["version",   sel.version],
+                ["status",    sel.status],
+                ["size",      sel.size],
+                ["updated",   sel.updated],
+              ].map(([k,v]) => (
+                <div key={k} style={{ display:"flex", gap:8, alignItems:"center" }}>
+                  <code style={{ fontSize:12, color:"#9E9589", minWidth:80 }}>{k}:</code>
+                  <span style={{ fontSize:13, color:"#1A1A1A", fontWeight:600 }}>{v}</span>
+                </div>
+              ))}
+              <div style={{ borderTop:"1px solid #EDE8DF", paddingTop:10, display:"flex", gap:8 }}>
+                <button className="btn-secondary" style={{ flex:1 }}>替换文件</button>
+                <button className="btn-danger" style={{ flex:1 }}
+                  onClick={() => setDeleteConfirm(sel.id)}>删除</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Delete confirm modal */}
+      {deleteConfirm && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)",
+          display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}>
+          <div className="card fade-in" style={{ width:360, padding:"28px 32px" }}>
+            <div style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>确认删除</div>
+            <div style={{ fontSize:14, color:"#7A7167", marginBottom:20 }}>
+              此操作将从文档库中删除文档 <code style={{ color:"#DC2626" }}>{deleteConfirm}</code>，不可恢复。
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button className="btn-ghost" style={{ flex:1 }} onClick={() => setDeleteConfirm(null)}>取消</button>
+              <button style={{ flex:1, height:38, background:"#DC2626", color:"#fff", border:"none",
+                borderRadius:8, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}
+                onClick={() => handleDelete(deleteConfirm)}>确认删除</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── KBReleasePipeline ─────────────────────────────────────────────────────────
+function KBReleasePipeline() {
+  const [phase, setPhase] = React.useState("idle"); // idle | running | done | error
+  const [step, setStep]   = React.useState(0);
+  const [log, setLog]     = React.useState([]);
+  const [version, setVersion] = React.useState("v0.0.3");
+  const [msg, setMsg]     = React.useState("feat: 新增应用题集×2，更新错题模板");
+  const timerRef = React.useRef();
+
+  const draftDocs = MOCK_DOCS.filter(d => d.status === "draft");
+
+  const LOG_LINES = [
+    ["[git]", "Staging 3 modified files…", "#7A7167"],
+    ["[git]", "Changes staged ✓", "#16A34A"],
+    ["[git]", `Committing: "${msg}"`, "#7A7167"],
+    ["[git]", "Commit abc123f ✓", "#16A34A"],
+    ["[git]", "Pushing to origin/main…", "#7A7167"],
+    ["[git]", "Branch pushed ✓", "#16A34A"],
+    ["[gh]",  "Pull Request #42 created", "#1865F2"],
+    ["[gh]",  "Auto-merge check passed ✓", "#16A34A"],
+    ["[vec]", "Loading BGE-M3 model…", "#7A7167"],
+    ["[vec]", "Encoding 3 new documents…", "#7A7167"],
+    ["[vec]", "Upserted 3 vectors into ChromaDB ✓", "#16A34A"],
+    ["[rel]", `Creating GitHub Release ${version}…`, "#7A7167"],
+    ["[rel]", `Release ${version} published ✓ 🎉`, "#16A34A"],
+  ];
+
+  function startRelease() {
+    setPhase("running"); setStep(0); setLog([]);
+    let s = 0;
+    let logIdx = 0;
+    timerRef.current = setInterval(() => {
+      // Advance pipeline step
+      s++;
+      setStep(s);
+      // Add 2 log lines per step
+      setLog(l => [...l,
+        LOG_LINES[logIdx] || LOG_LINES[LOG_LINES.length-1],
+        LOG_LINES[logIdx+1] || LOG_LINES[LOG_LINES.length-1],
+      ]);
+      logIdx += 2;
+      if (s >= PIPELINE_RELEASE.length) {
+        clearInterval(timerRef.current);
+        setPhase("done");
+      }
+    }, 900);
+  }
+
+  function reset() {
+    clearInterval(timerRef.current);
+    setPhase("idle"); setStep(0); setLog([]);
+  }
+
+  return (
+    <div className="fade-in">
+      <div className="page-title">知识库发布</div>
+      <div className="page-sub">发起 KB Release — LangGraph 任务链自动执行</div>
+
+      {/* Pre-release summary */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+        <div className="card">
+          <div style={{ fontSize:14, fontWeight:700, marginBottom:12 }}>待发布内容</div>
+          {draftDocs.length === 0 ? (
+            <div style={{ fontSize:14, color:"#9E9589" }}>暂无 draft 文档</div>
+          ) : draftDocs.map(d => (
+            <div key={d.id} style={{ display:"flex", alignItems:"center", gap:8,
+              padding:"6px 0", borderBottom:"1px solid #EDE8DF", fontSize:13 }}>
+              <span className={`tag tag-${d.type}`}>{d.type}</span>
+              <span style={{ flex:1, color:"#1A1A1A", fontWeight:500 }}>{d.title}</span>
+              <code style={{ fontSize:11, color:"#9E9589" }}>{d.id.split(".")[0]}.{d.id.split(".")[3]}</code>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div style={{ fontSize:14, fontWeight:700, marginBottom:12 }}>发布配置</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+              <label style={{ fontSize:13, fontWeight:600, color:"#5A5248" }}>目标版本号</label>
+              <input value={version} onChange={e => setVersion(e.target.value)}
+                disabled={phase !== "idle"}
+                style={{ height:36, borderRadius:8, border:"1.5px solid #DDD8CE",
+                  padding:"0 12px", fontSize:14, fontFamily:"inherit" }} />
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+              <label style={{ fontSize:13, fontWeight:600, color:"#5A5248" }}>提交信息</label>
+              <input value={msg} onChange={e => setMsg(e.target.value)}
+                disabled={phase !== "idle"}
+                style={{ height:36, borderRadius:8, border:"1.5px solid #DDD8CE",
+                  padding:"0 12px", fontSize:14, fontFamily:"inherit" }} />
+            </div>
+            {phase === "idle" && (
+              <button className="btn-primary" style={{ height:42 }} onClick={startRelease}>
+                🚀 发起 KB Release
+              </button>
+            )}
+            {phase === "done" && (
+              <div style={{ display:"flex", gap:8 }}>
+                <div style={{ flex:1, background:"#F0FDF4", border:"1.5px solid #86EFAC",
+                  borderRadius:8, padding:"10px 14px", fontSize:14, fontWeight:600, color:"#16A34A" }}>
+                  ✓ {version} 发布成功！
+                </div>
+                <button className="btn-ghost" onClick={reset}>重置</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Pipeline animation */}
+      {phase !== "idle" && (
+        <div style={{ marginBottom:16 }}>
+          <AgentPipeline steps={PIPELINE_RELEASE} currentStep={step} />
+        </div>
+      )}
+
+      {/* Log output */}
+      {log.length > 0 && (
+        <div className="card" style={{ padding:0, overflow:"hidden" }}>
+          <div style={{ padding:"10px 16px", background:"#F8F5F0", borderBottom:"1px solid #EDE8DF",
+            fontSize:13, fontWeight:700, color:"#5A5248" }}>任务日志</div>
+          <div style={{ background:"#1A1A2E", padding:"16px 18px", maxHeight:240, overflowY:"auto" }}>
+            {log.map((line, i) => (
+              <div key={i} style={{ fontSize:13, lineHeight:1.8, fontFamily:"monospace" }}>
+                <span style={{ color:"#4A90D9", marginRight:8 }}>{line[0]}</span>
+                <span style={{ color:line[2] }}>{line[1]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── KBVersionControl ──────────────────────────────────────────────────────────
+function KBVersionControl() {
+  const [versions, setVersions] = React.useState(MOCK_VERSIONS);
+  const [promoting, setPromoting] = React.useState(null);
+  const [rolling, setRolling]   = React.useState(null);
+
+  function promote(v) {
+    setPromoting(v);
+    setTimeout(() => {
+      setVersions(vers => vers.map(ver => ({
+        ...ver,
+        status: ver.version === v ? "active" : ver.status === "active" ? "deprecated" : ver.status,
+      })));
+      setPromoting(null);
+    }, 1200);
+  }
+
+  function rollback(v) {
+    setRolling(v);
+    setTimeout(() => {
+      setVersions(vers => vers.map(ver => ({
+        ...ver,
+        status: ver.version === v ? "active" : ver.version === "v0.0.2" ? "active" : ver.status,
+      })));
+      setRolling(null);
+    }, 1200);
+  }
+
+  return (
+    <div className="fade-in">
+      <div className="page-title">版本控制</div>
+      <div className="page-sub">查看所有 KB 版本 · 回滚或切换版本</div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        {versions.map(v => (
+          <div key={v.version} className="card" style={{
+            borderColor: v.status === "active" ? "#86EFAC" : v.status === "draft" ? "#93C5FD" : "#EDE8DF",
+            background: v.status === "active" ? "#F0FDF4" : v.status === "draft" ? "#F0F5FF" : "#fff",
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+              {/* Version badge */}
+              <div style={{ display:"flex", flexDirection:"column", gap:4, minWidth:80 }}>
+                <code style={{ fontSize:18, fontWeight:800,
+                  color: v.status==="active"?"#16A34A":v.status==="draft"?"#1865F2":"#9E9589" }}>
+                  {v.version}
+                </code>
+                <span className={`tag tag-${v.status}`}>{v.status}</span>
+              </div>
+
+              {/* Meta */}
+              <div style={{ flex:1, display:"flex", flexDirection:"column", gap:4 }}>
+                <div style={{ fontSize:14, fontWeight:600, color:"#1A1A1A" }}>{v.changes}</div>
+                <div style={{ fontSize:12, color:"#7A7167" }}>
+                  {v.author} · {v.date} · {v.docs} 份文档
+                </div>
+                {v.units.length > 0 && (
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:2 }}>
+                    {v.units.map(u => (
+                      <span key={u} style={{ fontSize:12, background:"#EEF3FF", color:"#1865F2",
+                        borderRadius:6, padding:"1px 8px", fontWeight:600 }}>{u}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display:"flex", gap:8 }}>
+                {v.status === "draft" && (
+                  <button className="btn-primary"
+                    style={{ opacity: promoting===v.version ? 0.7 : 1 }}
+                    onClick={() => promote(v.version)}>
+                    {promoting===v.version ? "发布中…" : "发布此版本"}
+                  </button>
+                )}
+                {v.status === "active" && v.version !== "v0.0.2" && (
+                  <div style={{ fontSize:13, color:"#16A34A", fontWeight:600,
+                    background:"#F0FDF4", borderRadius:8, padding:"6px 14px" }}>
+                    当前生产版本
+                  </div>
+                )}
+                {v.status === "active" && v.version !== versions.find(x=>x.status==="active")?.version && (
+                  <button className="btn-ghost"
+                    onClick={() => rollback(v.version)}
+                    style={{ opacity: rolling===v.version ? 0.7 : 1 }}>
+                    {rolling===v.version ? "回滚中…" : "回滚至此版本"}
+                  </button>
+                )}
+                {v.status === "deprecated" && (
+                  <button className="btn-ghost" onClick={() => rollback(v.version)}
+                    style={{ opacity: rolling===v.version ? 0.7 : 1 }}>
+                    {rolling===v.version ? "恢复中…" : "恢复此版本"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── KBVersionMap ──────────────────────────────────────────────────────────────
+function KBVersionMap() {
+  const [unitVersions, setUnitVersions] = React.useState(MOCK_UNIT_VERSIONS);
+  const [editing, setEditing] = React.useState(null);
+  const availableVersions = MOCK_VERSIONS.filter(v => v.status !== "deprecated").map(v => v.version);
+
+  function updateVersion(unit, version) {
+    setUnitVersions(uvs => uvs.map(u => u.unit === unit ? {...u, version, lastSync:"2026-05-03"} : u));
+    setEditing(null);
+  }
+
+  const versionColors = {
+    "v0.0.3": { bg:"#F0F5FF", border:"#93C5FD", text:"#1865F2" },
+    "v0.0.2": { bg:"#F0FDF4", border:"#86EFAC", text:"#16A34A" },
+    "v0.0.1": { bg:"#F5F3EF", border:"#DDD8CE", text:"#7A7167" },
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="page-title">单元版本映射</div>
+      <div className="page-sub">四年级下册 · 各单元当前使用的 KB 版本</div>
+
+      {/* Version legend */}
+      <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" }}>
+        {Object.entries(versionColors).map(([v, c]) => (
+          <div key={v} style={{ display:"flex", alignItems:"center", gap:6,
+            background:c.bg, border:`1.5px solid ${c.border}`, borderRadius:8, padding:"5px 12px" }}>
+            <div style={{ width:8, height:8, borderRadius:"50%", background:c.text }} />
+            <code style={{ fontSize:13, fontWeight:700, color:c.text }}>{v}</code>
+            <span style={{ fontSize:12, color:"#7A7167" }}>
+              {v==="v0.0.3"?"草稿":v==="v0.0.2"?"最新稳定":"稳定"}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:12 }}>
+        {unitVersions.map(u => {
+          const vc = versionColors[u.version] || versionColors["v0.0.1"];
+          const isEditing = editing === u.unit;
+          return (
+            <div key={u.unit} className="card" style={{
+              borderColor: vc.border, background: vc.bg,
+            }}>
+              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:10 }}>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:700, color:"#1A1A1A", marginBottom:2 }}>{u.name}</div>
+                  <div style={{ fontSize:12, color:"#7A7167" }}>G4T2 · {u.unit} · {u.docs} 份文档</div>
+                </div>
+                <button className="btn-ghost" style={{ fontSize:12, height:28, padding:"0 10px", flexShrink:0 }}
+                  onClick={() => setEditing(isEditing ? null : u.unit)}>
+                  {isEditing ? "取消" : "切换"}
+                </button>
+              </div>
+
+              {!isEditing ? (
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <code style={{ fontSize:16, fontWeight:800, color:vc.text }}>{u.version}</code>
+                  <span style={{ fontSize:12, color:"#9E9589" }}>同步于 {u.lastSync}</span>
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:"#5A5248" }}>选择版本</div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {availableVersions.map(v => {
+                      const c = versionColors[v] || {};
+                      return (
+                        <button key={v} onClick={() => updateVersion(u.unit, v)}
+                          style={{ padding:"6px 14px", borderRadius:8, cursor:"pointer",
+                            border:`1.5px solid ${c.border}`, background:c.bg, fontFamily:"inherit",
+                            fontSize:13, fontWeight:700, color:c.text,
+                            boxShadow: u.version===v ? "0 0 0 2px "+c.text : "none" }}>
+                          {v}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize:12, color:"#7A7167" }}>
+                    切换后立即生效，该单元的检索将使用新版本文档
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Summary table */}
+      <div className="card" style={{ marginTop:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"10px 16px", background:"#F8F5F0", borderBottom:"1px solid #EDE8DF",
+          fontSize:13, fontWeight:700, color:"#5A5248" }}>版本分布总览</div>
+        <div style={{ padding:"16px 20px", display:"flex", gap:20, flexWrap:"wrap" }}>
+          {Object.entries(
+            unitVersions.reduce((acc, u) => { acc[u.version] = (acc[u.version]||0)+1; return acc; }, {})
+          ).map(([v, count]) => {
+            const c = versionColors[v] || {};
+            return (
+              <div key={v} style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <code style={{ fontSize:15, fontWeight:800, color:c.text }}>{v}</code>
+                <div style={{ fontSize:13, color:"#7A7167" }}>使用中：{count} 个单元</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { section:"学生管理", items:[
+    { id:"students", icon:"👥", label:"学生成长概览" },
+  ]},
+  { section:"知识库", items:[
+    { id:"docs",     icon:"📁", label:"文档库管理" },
+    { id:"release",  icon:"🚀", label:"KB 发布" },
+    { id:"versions", icon:"🏷",  label:"版本控制" },
+    { id:"vmap",     icon:"🗺",  label:"单元版本映射" },
+  ]},
+];
+
+function AdminPanel() {
+  const [page, setPage] = React.useState("students");
+  const user = React.useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("mtt_user") || "{}"); } catch(e) { return {}; }
+  }, []);
+
+  function renderPage() {
+    if (page === "students") return <StudentOverview />;
+    if (page === "docs")     return <KBDocManager />;
+    if (page === "release")  return <KBReleasePipeline />;
+    if (page === "versions") return <KBVersionControl />;
+    if (page === "vmap")     return <KBVersionMap />;
+    return null;
+  }
+
+  return (
+    <div id="shell">
+      {/* Top bar */}
+      <div id="topbar">
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:32, height:32, borderRadius:8, background:"#1865F2",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:16, fontWeight:800, color:"#fff" }}>数</div>
+          <span style={{ fontSize:15, fontWeight:700, color:"#1A1A1A" }}>数学助手</span>
+          <span style={{ fontSize:13, color:"#9E9589", background:"#F5F3EF",
+            borderRadius:6, padding:"2px 10px", marginLeft:4 }}>管理后台</span>
+        </div>
+        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:12 }}>
+          <a href="Math Tutor.html"
+            style={{ fontSize:13, color:"#1865F2", fontWeight:600, textDecoration:"none",
+              background:"#EEF3FF", borderRadius:8, padding:"5px 12px" }}>
+            ← 学习界面
+          </a>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:18 }}>{user.avatar || "👩‍🏫"}</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, lineHeight:1.2 }}>{user.name || "管理员"}</div>
+              <div style={{ fontSize:11, color:"#9E9589" }}>{user.title || "admin"}</div>
+            </div>
+          </div>
+          <a href="Login.html"
+            style={{ fontSize:13, color:"#7A7167", textDecoration:"none",
+              border:"1.5px solid #DDD8CE", borderRadius:8, padding:"5px 12px" }}>
+            退出
+          </a>
+        </div>
+      </div>
+
+      <div id="body">
+        {/* Side nav */}
+        <div id="sidenav">
+          {NAV_ITEMS.map(section => (
+            <React.Fragment key={section.section}>
+              <div className="nav-section">{section.section}</div>
+              {section.items.map(item => (
+                <button key={item.id}
+                  className={`nav-item${page === item.id ? " active" : ""}`}
+                  onClick={() => setPage(item.id)}>
+                  <span style={{ fontSize:16 }}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div id="content">{renderPage()}</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<AdminPanel />);
+</script>
+</body>
+</html>
