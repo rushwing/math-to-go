@@ -11,8 +11,8 @@ Task state is the single source of truth: the `status` and `owner` fields in REQ
 | Operation | How | Example |
 |-----------|-----|---------|
 | Read current state | `cat tasks/req/REQ-NNN.md` | — |
-| Claim task | Edit frontmatter, `git commit -m "claim: REQ-NNN by claude"` | — |
-| Advance state | Edit frontmatter, `git commit -m "handoff: REQ-NNN → codex (T03)"` | T03: req approved |
+| Claim task | Edit frontmatter, `git commit -m "claim: REQ-NNN by optimizer-001"` | — |
+| Advance state | Edit frontmatter, `git commit -m "handoff: REQ-NNN → evaluator-001 (T03)"` | T03: req approved |
 | Reject in review | Edit `owner` + `review_round`, `git commit -m "review-reject: REQ-NNN round N"` | T04, T08, T11, T14 |
 | Block task | Set `status=blocked`, `blocked_from_*`, append to `pending_bugs` | T17 |
 | Unblock task | Restore `status` + `owner` from `blocked_from_*` | T18 |
@@ -60,17 +60,19 @@ Claiming an envelope: `mv tasks/inbox/for-claude/pending/REQ-NNN-T03.json tasks/
 
 ## §3 Git / GitHub Connector
 
-| Operation | Command | Who uses it |
-|-----------|---------|------------|
-| Create feature branch | `git checkout -b feat/REQ-NNN` | Claude or Codex |
-| Commit TC files | `git add tasks/test-cases/ && git commit -m "tc-design: TC-NNN"` | Codex |
-| Commit implementation | `git add backend/ && git commit -m "feat: REQ-NNN <title>"` | Claude |
-| Open PR | `gh pr create --title "..." --body "..."` | Codex |
-| View PR status | `gh pr view REQ-NNN --json statusCheckRollup` | Any agent |
-| Add review comment | `gh pr review <PR_NUMBER> --comment -b "[BLOCK] ..."` | Codex |
-| Check CI status | `gh run list --branch feat/REQ-NNN` | Any agent |
+| Operation | Command | Who uses it | When |
+|-----------|---------|------------|------|
+| Create feature branch | `git checkout -b feat/REQ-NNN` | Claude | Start of `req_impl` |
+| Commit TC files | `git add tasks/test-cases/ && git commit -m "tc-design: TC-NNN"` | Codex | `tc_design` |
+| Commit implementation | `git add backend/ && git commit -m "feat: REQ-NNN <title>"` | Claude | During `req_impl` |
+| **Open draft PR** | `gh pr create --draft --title "feat: REQ-NNN <title>" --body "..."` | **Claude** | End of `req_impl` (T12) |
+| View PR status | `gh pr view <PR_NUMBER> --json statusCheckRollup` | Any agent | Any time |
+| Add review comment | `gh pr review <PR_NUMBER> --comment -b "[BLOCK] ..."` | Codex | `req_impl_review` |
+| **Convert draft → ready** | `gh pr ready <PR_NUMBER>` | **Codex** | T13 (approval) |
+| Check CI status | `gh run list --branch feat/REQ-NNN` | Any agent | Any time |
+| Merge PR | GitHub UI or `gh pr merge <PR_NUMBER>` | **Human** | `pr_draft` (T15) |
 
-**PR description template** (Codex fills this):
+**PR description template** (Claude fills this at T12, opening the draft PR):
 
 ```markdown
 ## REQ
@@ -80,13 +82,16 @@ REQ-NNN — <title>
 - <bullet per logical change>
 
 ## Test evidence
+- `./scripts/local/test.sh` passed (all G1–G5 gates)
 - All TC-NNN-SS pass: `pytest backend/tests/ -v`
-- Playwright E2E: `npx playwright test uc2-generate.spec.ts`
 - Coverage: X% (≥ 80%)
 
 ## Design change protocol
 - [ ] No design artifacts changed
 - [ ] OR: followed harness/design-change-protocol.md (list updated files)
+
+## Notes for reviewer
+<anything Codex should know: tricky edge cases, deferred items, open questions>
 ```
 
 ---

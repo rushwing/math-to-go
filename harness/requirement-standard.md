@@ -39,7 +39,8 @@ Any other status (`draft`, `blocked`, `done`, `tc_review` with `owner=codex` etc
 ### Mechanical check (run before starting)
 
 ```bash
-bash scripts/claim-req.sh REQ-NNN <your-agent-name>
+AGENT_UID=optimizer-001 bash scripts/claim-req.sh REQ-NNN
+# or: bash scripts/claim-req.sh REQ-NNN optimizer-001  (explicit arg)
 # exits 0 = OK to proceed and claim
 # exits 1 = HARD STOP with reason
 ```
@@ -74,12 +75,14 @@ REQ IDs are sequential integers, zero-padded to 3 digits: `REQ-001`, `REQ-042`.
 
 ## §3 Frontmatter Schema
 
+> **Canonical enum values** (status, owner, tc_policy, priority, bug status) are machine-readable in `harness/req-constants.sh` and human-readable in `harness/GLOSSARY.md §13`. The validator (`scripts/check-req-coverage.sh`) sources `req-constants.sh` directly. When adding a new enum value, update `req-constants.sh` first, then this document and GLOSSARY.md §13.
+
 ```yaml
 ---
 req_id: REQ-001
 title: "BGE-M3 hybrid retrieval pipeline"
 status: draft                  # see §4 state machine
-owner: unassigned              # human | claude | codex | unassigned
+owner: unassigned              # optimizer-001 | evaluator-001 | human-001 | unassigned
 priority: P1                   # P0 (critical) | P1 | P2 | P3
 phase: PHASE-002
 scope: backend                 # backend | frontend | harness | docs | scripts | fullstack
@@ -115,47 +118,52 @@ pr_number: ""                  # GitHub PR number, set at pr_draft
 
 ### State Overview
 
-| State | Phase | Who owns it | Meaning |
-|-------|-------|-------------|---------|
-| `draft` | Scoping | human | Requirement idea being sketched; not ready for agent work |
-| `req_review` | Req Design | claude or codex | Claude designs spec ↔ Codex reviews; iterate until approved |
-| `tc_design` | TC Design | codex | Codex writes test cases as structured text (`TC-NNN-SS.md`) |
-| `tc_review` | TC Review | claude or codex | Claude reviews TC text ↔ Codex revises; iterate until approved |
-| `tc_impl` | TC Implementation | claude | Claude codes the test cases |
-| `tc_impl_review` | TC Code Review | codex | Codex reviews test code quality and coverage |
-| `req_impl` | Implementation | claude | Claude codes the requirement |
-| `req_impl_review` | Code Review | codex | Codex reviews implementation correctness and style |
-| `pr_draft` | PR | codex → human | Codex opens the PR; human reviews and merges |
+| State | Phase | Owner (frontmatter) | Meaning |
+|-------|-------|---------------------|---------|
+| `draft` | Scoping | `human-001` | Requirement idea being sketched; not ready for agent work |
+| `req_review` | Req Design | `optimizer-001` or `evaluator-001` | Optimizer designs spec ↔ Evaluator reviews; iterate until approved |
+| `tc_design` | TC Design | `evaluator-001` | Evaluator writes test cases as structured text (`TC-NNN-SS.md`) |
+| `tc_review` | TC Review | `optimizer-001` or `evaluator-001` | Optimizer reviews TC text ↔ Evaluator revises; iterate until approved |
+| `tc_impl` | TC Implementation | `optimizer-001` | Optimizer codes the test cases |
+| `tc_impl_review` | TC Code Review | `evaluator-001` | Evaluator reviews test code quality and coverage |
+| `req_impl` | Implementation | `optimizer-001` | Optimizer codes the requirement; opens draft PR on completion |
+| `req_impl_review` | Code Review | `evaluator-001` | Evaluator reviews the open draft PR; approves or requests changes |
+| `pr_draft` | PR Ready | `human-001` | Draft PR converted to ready-for-review; awaiting human merge |
 | `done` | Complete | — | PR merged, all bugs closed |
-| `blocked` | Blocked | unassigned | External dependency or escalation; see §5 |
+| `blocked` | Blocked | `unassigned` | External dependency or escalation; see §5 |
 
 > **Design-review vs implementation-review distinction:**
-> `req_review` and `tc_review` are _design loops_: on failure the state **stays**, only the owner changes (Codex → Claude or Claude → Codex). The "review" state encompasses both authoring and reviewing.
+> `req_review` and `tc_review` are _design loops_: on failure the state **stays**, only the owner changes (evaluator-001 → optimizer-001 or optimizer-001 → evaluator-001). The "review" state encompasses both authoring and reviewing.
 > `tc_impl_review` and `req_impl_review` are _code review gates_: on failure the state **goes back** to the implementation state (the artifact is not complete).
+>
+> **UID → agent mapping:** see `harness/agent-registry.yml`. Current defaults: `optimizer-001` = Claude claude-sonnet-4-6; `evaluator-001` = Codex; `human-001` = Daniel.
 
 ### Transition Table
 
 | # | From | Actor | Event | To | Owner after | review_round |
 |---|------|-------|-------|-----|-------------|-------------|
-| T01 | `draft` | human | Approves scope; req is ready for design | `req_review` | claude | reset 0 |
-| T02 | `req_review` | claude | Completes requirement design | `req_review` | codex | — |
-| T03 | `req_review` | codex | **Approves** requirement | `tc_design` | codex | reset 0 |
-| T04 | `req_review` | codex | **Requests changes** | `req_review` | claude | +1 |
-| T05 | `req_review` | codex | Approves + `tc_policy=exempt` | `req_impl` | claude | reset 0 |
-| T06 | `tc_design` | codex | Completes TC text; all ACs covered | `tc_review` | claude | reset 0 |
-| T07 | `tc_review` | claude | **Approves** TC design | `tc_impl` | claude | reset 0 |
-| T08 | `tc_review` | claude | **Requests changes** | `tc_review` | codex | +1 |
-| T09 | `tc_impl` | claude | Completes TC code; tests runnable | `tc_impl_review` | codex | reset 0 |
-| T10 | `tc_impl_review` | codex | **Approves** TC code | `req_impl` | claude | reset 0 |
-| T11 | `tc_impl_review` | codex | **Requests changes** | `tc_impl` | claude | +1 |
-| T12 | `req_impl` | claude | Completes implementation; tests pass | `req_impl_review` | codex | reset 0 |
-| T13 | `req_impl_review` | codex | **Approves** implementation | `pr_draft` | codex | reset 0 |
-| T14 | `req_impl_review` | codex | **Requests changes** | `req_impl` | claude | +1 |
-| T15 | `pr_draft` | codex | Opens PR (`gh pr create`) | `pr_draft` | human | — |
-| T16 | `pr_draft` | human | Merges PR; sets `status=done` | `done` | — | — |
-| T17 | any | any | External blocker arises | `blocked` | unassigned | — |
-| T18 | `blocked` | human | Blocker resolved | `blocked_from_status` | `blocked_from_owner` | — |
-| T19 | any review state | — | `review_round ≥ 3` | `blocked` | human | — |
+| T01 | `draft` | human-001 | Approves scope; req is ready for design | `req_review` | `optimizer-001` | reset 0 |
+| T02 | `req_review` | optimizer-001 | Completes requirement design | `req_review` | `evaluator-001` | — |
+| T03 | `req_review` | evaluator-001 | **Approves** requirement | `tc_design` | `evaluator-001` | reset 0 |
+| T04 | `req_review` | evaluator-001 | **Requests changes** | `req_review` | `optimizer-001` | +1 |
+| T05 | `req_review` | evaluator-001 | Approves + `tc_policy=exempt` | `req_impl` | `optimizer-001` | reset 0 |
+| T06 | `tc_design` | evaluator-001 | Completes TC text; all ACs covered | `tc_review` | `optimizer-001` | reset 0 |
+| T07 | `tc_review` | optimizer-001 | **Approves** TC design | `tc_impl` | `optimizer-001` | reset 0 |
+| T08 | `tc_review` | optimizer-001 | **Requests changes** | `tc_review` | `evaluator-001` | +1 |
+| T09 | `tc_impl` | optimizer-001 | Completes TC code; tests runnable | `tc_impl_review` | `evaluator-001` | reset 0 |
+| T10 | `tc_impl_review` | evaluator-001 | **Approves** TC code | `req_impl` | `optimizer-001` | reset 0 |
+| T11 | `tc_impl_review` | evaluator-001 | **Requests changes** | `tc_impl` | `optimizer-001` | +1 |
+| T12 | `req_impl` | optimizer-001 | Completes implementation; tests pass; **opens draft PR** (`gh pr create --draft`) | `req_impl_review` | `evaluator-001` | reset 0 |
+| T13 | `req_impl_review` | evaluator-001 | **Approves** implementation; converts draft PR to ready (`gh pr ready`) | `pr_draft` | `human-001` | reset 0 |
+| T14 | `req_impl_review` | evaluator-001 | **Requests changes** (via PR review comments) | `req_impl` | `optimizer-001` | +1 |
+| T15 | `pr_draft` | human-001 | Merges PR; sets `status=done` | `done` | — | — |
+| T16 | any | any | External blocker arises | `blocked` | `unassigned` | — |
+| T17 | `blocked` | human-001 | Blocker resolved | `blocked_from_status` | `blocked_from_owner` | — |
+| T18 | any review state | — | `review_round ≥ 3` | `blocked` | `human-001` | — |
+
+> **T12 detail:** Claude runs `./scripts/local/test.sh` (all CI gates), then opens a **draft** PR with the standard description template (see `CONNECTORS.md §3`). The draft flag signals the PR is not yet ready for human merge — Codex review must happen first. Opening the draft PR at this point makes the full diff and test evidence visible to Codex in a structured review surface, rather than a flat file diff.
+>
+> **T13 detail:** Codex approves by running `gh pr ready <PR_NUMBER>` (converts draft → ready for review) and updating the REQ frontmatter. This is the signal to Human that the PR is mergeable.
 
 ### State Machine Diagram
 
@@ -163,42 +171,42 @@ pr_number: ""                  # GitHub PR number, set at pr_draft
           human
             │ T01
             ▼
-        req_review  ◄──── T04 (codex rejects; owner→claude; +review_round)
-       claude ↔ codex
+        req_review  ◄──── T04 (evaluator-001 rejects; owner→optimizer-001; +review_round)
+   optimizer-001 ↔ evaluator-001
             │ T03 (approved)          T05 (approved + exempt)
             ▼                              │
         tc_design ◄────────────────────────┘  ──► req_impl (see below)
-           codex
+        evaluator-001
             │ T06
             ▼
-         tc_review  ◄──── T08 (claude rejects; owner→codex; +review_round)
-        claude ↔ codex
+         tc_review  ◄──── T08 (optimizer-001 rejects; owner→evaluator-001; +review_round)
+   optimizer-001 ↔ evaluator-001
             │ T07 (approved)
             ▼
           tc_impl
-           claude
+        optimizer-001
             │ T09
             ▼
       tc_impl_review
-           codex
+        evaluator-001
             │ T10 (approved)     T11 (rejected → back to tc_impl)
             ▼
           req_impl
-           claude
-            │ T12
+        optimizer-001
+            │ T12: impl done + opens draft PR
             ▼
       req_impl_review
-           codex
-            │ T13 (approved)     T14 (rejected → back to req_impl)
+        evaluator-001  (reviews on open draft PR)
+            │ T13 (approved + gh pr ready)   T14 (rejected via PR comments → back to req_impl)
             ▼
           pr_draft
-       codex → human
-            │ T16
+         human-001  (draft→ready; awaiting merge)
+            │ T15
             ▼
            done
 
-  T17: any state → blocked (external blocker or review_round ≥ 3)
-  T18: blocked → blocked_from_status (human resolves)
+  T16: any state → blocked (external blocker or review_round ≥ 3)
+  T17: blocked → blocked_from_status (human-001 resolves)
 ```
 
 ---
@@ -212,7 +220,7 @@ status: blocked
 owner: unassigned
 blocked_reason: "Waiting for Neo4j Docker image fix"
 blocked_from_status: req_impl          # previous status
-blocked_from_owner: claude             # previous owner
+blocked_from_owner: optimizer-001      # previous owner
 pending_bugs: [BUG-007]               # if bug-triggered
 ```
 
@@ -236,7 +244,7 @@ A handoff is complete when the REQ frontmatter is updated AND the receiving agen
 ```bash
 # Single commit, atomic claim
 git add tasks/req/REQ-NNN.md
-git commit -m "claim: REQ-NNN by claude"
+git commit -m "claim: REQ-NNN by optimizer-001"
 ```
 
 **Handing off (agent → agent):**
@@ -248,9 +256,9 @@ git commit -m "claim: REQ-NNN by claude"
 **Review rejection (agent → same state, new owner):**
 
 ```yaml
-status: req_review       # unchanged
-owner: claude            # changed back to author
-review_round: 1          # incremented
+status: req_review          # unchanged
+owner: optimizer-001        # changed back to author
+review_round: 1             # incremented
 ```
 
 Commit message: `review-reject: REQ-NNN round 1 — <summary of changes requested>`
